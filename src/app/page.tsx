@@ -1,69 +1,335 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import Navbar from '@/components/Navbar';
+import LocationHero from '@/components/LocationHero';
+import FilterBar from '@/components/FilterBar';
+import AgendaView from '@/components/AgendaView';
+import CalendarView from '@/components/CalendarView';
+import EventModal from '@/components/EventModal';
+import SubscribeModal from '@/components/SubscribeModal';
+import LibrarySelectorModal from '@/components/LibrarySelectorModal';
+import {
+  AgeGroup,
+  EventType,
+  TimeOfDay,
+  LibraryBranch,
+  LibrarySystem,
+  StorytimeEvent,
+} from '@/types';
+import { parseISO, getHours } from 'date-fns';
 
 export default function Home() {
+  // State
+  const [locationName, setLocationName] = useState<string>('Seattle, WA (98107)');
+  const [coords, setCoords] = useState<{ lat: number; lon: number }>({
+    lat: 47.6698,
+    lon: -122.3848,
+  });
+  const [radiusMiles, setRadiusMiles] = useState<number>(10);
+
+  const [systems, setSystems] = useState<LibrarySystem[]>([]);
+  const [branches, setBranches] = useState<LibraryBranch[]>([]);
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
+
+  const [selectedAges, setSelectedAges] = useState<AgeGroup[]>(['baby', 'toddler']);
+  const [selectedEventTypes, setSelectedEventTypes] = useState<EventType[]>([]);
+  const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<TimeOfDay[]>([]);
+  const [searchFilter, setSearchFilter] = useState<string>('');
+
+  const [viewMode, setViewMode] = useState<'agenda' | 'month'>('agenda');
+  const [events, setEvents] = useState<StorytimeEvent[]>([]);
+
+  // Modals
+  const [selectedEvent, setSelectedEvent] = useState<StorytimeEvent | null>(null);
+  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState<boolean>(false);
+  const [isBranchModalOpen, setIsBranchModalOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // 1. Fetch libraries when coords or radius changes
+  useEffect(() => {
+    async function fetchLibraries() {
+      setIsLoading(true);
+      try {
+        const res = await fetch(
+          `/api/libraries?lat=${coords.lat}&lon=${coords.lon}&radius=${radiusMiles}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSystems(data.systems || []);
+          setBranches(data.branches || []);
+
+          // Automatically select all branches within radius
+          const branchIds = (data.branches || []).map((b: LibraryBranch) => b.id);
+          setSelectedBranchIds(branchIds);
+        }
+      } catch (err) {
+        console.error('Failed to fetch libraries:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchLibraries();
+  }, [coords.lat, coords.lon, radiusMiles]);
+
+  // 2. Fetch events when selected branches change
+  useEffect(() => {
+    async function fetchEvents() {
+      if (selectedBranchIds.length === 0) {
+        setEvents([]);
+        return;
+      }
+
+      try {
+        const branchParam = selectedBranchIds.join(',');
+        const res = await fetch(`/api/events?branches=${encodeURIComponent(branchParam)}&days=60`);
+        if (res.ok) {
+          const data = await res.json();
+          setEvents(data.events || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch events:', err);
+      }
+    }
+
+    fetchEvents();
+  }, [selectedBranchIds]);
+
+  // 3. Geocode location search
+  const handleSearch = async (query: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCoords({ lat: data.lat, lon: data.lon });
+        setLocationName(data.displayName || query);
+      } else {
+        alert('Could not locate that address or zip code. Please try another query.');
+      }
+    } catch (err) {
+      console.error('Geocode search error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 4. Geolocation browser API
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setIsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        setCoords({ lat, lon });
+        setLocationName('Your Current Location');
+        setIsLoading(false);
+      },
+      (err) => {
+        alert('Unable to retrieve your location: ' + err.message);
+        setIsLoading(false);
+      },
+      { timeout: 8000 }
+    );
+  };
+
+  // Branch Selection Toggles
+  const handleToggleBranch = (branchId: string) => {
+    setSelectedBranchIds((prev) =>
+      prev.includes(branchId) ? prev.filter((id) => id !== branchId) : [...prev, branchId]
+    );
+  };
+
+  const handleSelectAllBranches = () => {
+    setSelectedBranchIds(branches.map((b) => b.id));
+  };
+
+  const handleDeselectAllBranches = () => {
+    setSelectedBranchIds([]);
+  };
+
+  // Filter Toggles
+  const handleToggleAge = (age: AgeGroup) => {
+    setSelectedAges((prev) =>
+      prev.includes(age) ? prev.filter((a) => a !== age) : [...prev, age]
+    );
+  };
+
+  const handleToggleEventType = (type: EventType) => {
+    setSelectedEventTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
+  const handleToggleTimeOfDay = (time: TimeOfDay) => {
+    setSelectedTimeOfDay((prev) =>
+      prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]
+    );
+  };
+
+  const handleClearFilters = () => {
+    setSelectedAges([]);
+    setSelectedEventTypes([]);
+    setSelectedTimeOfDay([]);
+    setSearchFilter('');
+  };
+
+  // Filtered Events
+  const filteredEvents = useMemo(() => {
+    return events.filter((ev) => {
+      // Age filter
+      if (selectedAges.length > 0 && !selectedAges.includes(ev.ageGroup)) {
+        return false;
+      }
+
+      // Event Type filter
+      if (selectedEventTypes.length > 0 && !selectedEventTypes.includes(ev.eventType)) {
+        return false;
+      }
+
+      // Time of Day filter
+      if (selectedTimeOfDay.length > 0) {
+        const hour = getHours(parseISO(ev.startTime));
+        const matchesTime = selectedTimeOfDay.some((t) => {
+          if (t === 'morning') return hour < 11.5;
+          if (t === 'midday') return hour >= 11.5 && hour < 14;
+          if (t === 'afternoon') return hour >= 14;
+          return false;
+        });
+        if (!matchesTime) return false;
+      }
+
+      // Search keyword filter
+      if (searchFilter.trim().length > 0) {
+        const q = searchFilter.toLowerCase();
+        const matchesQuery =
+          ev.title.toLowerCase().includes(q) ||
+          ev.description.toLowerCase().includes(q) ||
+          ev.branchName.toLowerCase().includes(q) ||
+          (ev.roomOrLocation && ev.roomOrLocation.toLowerCase().includes(q));
+        if (!matchesQuery) return false;
+      }
+
+      return true;
+    });
+  }, [events, selectedAges, selectedEventTypes, selectedTimeOfDay, searchFilter]);
+
+  const hasActiveFilters =
+    selectedAges.length > 0 ||
+    selectedEventTypes.length > 0 ||
+    selectedTimeOfDay.length > 0 ||
+    searchFilter.length > 0;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+      {/* Top Navbar */}
+      <Navbar
+        locationLabel={locationName}
+        selectedBranchCount={selectedBranchIds.length}
+        onOpenSubscribeModal={() => setIsSubscribeModalOpen(true)}
+        onOpenBranchModal={() => setIsBranchModalOpen(true)}
+      />
+
+      {/* Hero with Search and Radius */}
+      <LocationHero
+        currentLocationName={locationName}
+        onSearch={handleSearch}
+        onUseCurrentLocation={handleUseCurrentLocation}
+        radiusMiles={radiusMiles}
+        onRadiusChange={setRadiusMiles}
+        totalLibrariesFound={branches.length}
+        selectedBranchCount={selectedBranchIds.length}
+        onOpenBranchSelector={() => setIsBranchModalOpen(true)}
+        isLoading={isLoading}
+      />
+
+      {/* Sticky Filter Bar */}
+      <FilterBar
+        selectedAges={selectedAges}
+        onToggleAge={handleToggleAge}
+        selectedEventTypes={selectedEventTypes}
+        onToggleEventType={handleToggleEventType}
+        selectedTimeOfDay={selectedTimeOfDay}
+        onToggleTimeOfDay={handleToggleTimeOfDay}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        searchFilter={searchFilter}
+        onSearchFilterChange={setSearchFilter}
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={hasActiveFilters}
+        totalFilteredEvents={filteredEvents.length}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {viewMode === 'agenda' ? (
+          <AgendaView
+            events={filteredEvents}
+            onSelectEvent={setSelectedEvent}
+            onClearFilters={handleClearFilters}
+          />
+        ) : (
+          <CalendarView
+            events={filteredEvents}
+            onSelectEvent={setSelectedEvent}
+          />
+        )}
       </main>
+
+      {/* Modals */}
+      <EventModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
+
+      <SubscribeModal
+        isOpen={isSubscribeModalOpen}
+        onClose={() => setIsSubscribeModalOpen(false)}
+        selectedBranchIds={selectedBranchIds}
+        selectedAges={selectedAges}
+        selectedEventTypes={selectedEventTypes}
+      />
+
+      <LibrarySelectorModal
+        isOpen={isBranchModalOpen}
+        onClose={() => setIsBranchModalOpen(false)}
+        branches={branches}
+        systems={systems}
+        selectedBranchIds={selectedBranchIds}
+        onToggleBranch={handleToggleBranch}
+        onSelectAll={handleSelectAllBranches}
+        onDeselectAll={handleDeselectAllBranches}
+      />
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p>
+            StorytimeRadar • Built for parents & caregivers hunting for community fun
+          </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSubscribeModalOpen(true)}
+              className="text-rose-600 hover:text-rose-700 font-semibold"
+            >
+              Get Calendar Feed
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => setIsBranchModalOpen(true)}
+              className="text-slate-600 hover:text-slate-900"
+            >
+              Manage Libraries
+            </button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
