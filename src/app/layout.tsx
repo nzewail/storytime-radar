@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: 'StorytimeRadar — Local Storytimes & Community Events for Kids',
   description:
     'Find free storytimes, baby lap-sits, toddler music hours, and library events near you, and sync them right into Google Calendar or Apple Calendar.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
