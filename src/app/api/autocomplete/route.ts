@@ -8,50 +8,64 @@ interface AutocompleteItem {
   query: string;
 }
 
-// Quick instant suggestions for popular metro hubs
-const LOCAL_SUGGESTIONS: AutocompleteItem[] = [
-  // Southern California / Pasadena / LA
-  { title: 'Pasadena, CA', subtitle: '91101 • Downtown / Playhouse District', lat: 34.1449, lon: -118.1381, query: '91101' },
-  { title: 'Pasadena, CA', subtitle: '91107 • East Pasadena / Hastings Ranch', lat: 34.1565, lon: -118.0837, query: '91107' },
-  { title: 'Pasadena, CA', subtitle: '91106 • Caltech / South Lake', lat: 34.1388, lon: -118.1258, query: '91106' },
-  { title: 'Pasadena, CA', subtitle: '91104 • Bungalow Heaven', lat: 34.1624, lon: -118.1258, query: '91104' },
-  { title: 'Pasadena, CA', subtitle: '91103 • Northwest / Rose Bowl', lat: 34.1675, lon: -118.1633, query: '91103' },
-  { title: 'Pasadena, CA', subtitle: '91105 • South Arroyo', lat: 34.1350, lon: -118.1610, query: '91105' },
-  { title: 'South Pasadena, CA', subtitle: '91030 • Los Angeles County', lat: 34.1166, lon: -118.1528, query: '91030' },
-  { title: 'Altadena, CA', subtitle: '91001 • Foothills', lat: 34.1925, lon: -118.1388, query: '91001' },
-  { title: 'San Marino, CA', subtitle: '91108 • San Gabriel Valley', lat: 34.1221, lon: -118.1189, query: '91108' },
-  { title: 'Glendale, CA', subtitle: '91205 • Brand / Americana', lat: 34.1438, lon: -118.2525, query: '91205' },
-  { title: 'Alhambra, CA', subtitle: '91801 • San Gabriel Valley', lat: 34.0955, lon: -118.1287, query: '91801' },
-  { title: 'Eagle Rock, Los Angeles, CA', subtitle: '90041 • Northeast LA', lat: 34.1396, lon: -118.2114, query: '90041' },
-  { title: 'Highland Park, Los Angeles, CA', subtitle: '90042 • Northeast LA', lat: 34.1105, lon: -118.1923, query: '90042' },
-  { title: 'Downtown Los Angeles, CA', subtitle: '90071 • Financial District', lat: 34.0503, lon: -118.2553, query: '90071' },
+// Clean city-level entries (used when user types letters / city names)
+const CITY_SUGGESTIONS: AutocompleteItem[] = [
+  { title: 'Pasadena, CA', subtitle: 'California, United States', lat: 34.1478, lon: -118.1445, query: 'Pasadena, CA' },
+  { title: 'South Pasadena, CA', subtitle: 'California, United States', lat: 34.1166, lon: -118.1528, query: 'South Pasadena, CA' },
+  { title: 'Altadena, CA', subtitle: 'California, United States', lat: 34.1925, lon: -118.1388, query: 'Altadena, CA' },
+  { title: 'Glendale, CA', subtitle: 'California, United States', lat: 34.1425, lon: -118.2551, query: 'Glendale, CA' },
+  { title: 'San Marino, CA', subtitle: 'California, United States', lat: 34.1221, lon: -118.1189, query: 'San Marino, CA' },
+  { title: 'Alhambra, CA', subtitle: 'California, United States', lat: 34.0955, lon: -118.1287, query: 'Alhambra, CA' },
+  { title: 'Los Angeles, CA', subtitle: 'California, United States', lat: 34.0522, lon: -118.2437, query: 'Los Angeles, CA' },
+  { title: 'Eagle Rock, Los Angeles, CA', subtitle: 'California, United States', lat: 34.1396, lon: -118.2114, query: 'Eagle Rock, CA' },
+  { title: 'Highland Park, Los Angeles, CA', subtitle: 'California, United States', lat: 34.1105, lon: -118.1923, query: 'Highland Park, CA' },
+  { title: 'Burbank, CA', subtitle: 'California, United States', lat: 34.1808, lon: -118.3090, query: 'Burbank, CA' },
+  { title: 'San Gabriel, CA', subtitle: 'California, United States', lat: 34.0961, lon: -118.1058, query: 'San Gabriel, CA' },
+  { title: 'Arcadia, CA', subtitle: 'California, United States', lat: 34.1397, lon: -118.0353, query: 'Arcadia, CA' },
   
-  // Bay Area / SF
-  { title: 'San Francisco, CA', subtitle: '94102 • Civic Center / Hayes Valley', lat: 37.7786, lon: -122.4212, query: '94102' },
-  { title: 'San Francisco, CA', subtitle: '94110 • Mission District', lat: 37.7500, lon: -122.4153, query: '94110' },
-  { title: 'San Francisco, CA', subtitle: '94118 • Richmond District', lat: 37.7818, lon: -122.4571, query: '94118' },
-  { title: 'San Francisco, CA', subtitle: '94122 • Sunset District', lat: 37.7618, lon: -122.4764, query: '94122' },
-  { title: 'San Francisco, CA', subtitle: '94114 • Castro / Noe Valley', lat: 37.7513, lon: -122.4347, query: '94114' },
-  { title: 'San Francisco, CA', subtitle: '94123 • Marina / Cow Hollow', lat: 37.8005, lon: -122.4352, query: '94123' },
+  // Bay Area
+  { title: 'San Francisco, CA', subtitle: 'California, United States', lat: 37.7749, lon: -122.4194, query: 'San Francisco, CA' },
+  { title: 'Oakland, CA', subtitle: 'California, United States', lat: 37.8044, lon: -122.2712, query: 'Oakland, CA' },
+  { title: 'Berkeley, CA', subtitle: 'California, United States', lat: 37.8715, lon: -122.2730, query: 'Berkeley, CA' },
+  { title: 'San Jose, CA', subtitle: 'California, United States', lat: 37.3382, lon: -121.8863, query: 'San Jose, CA' },
 
-  // Seattle
-  { title: 'Seattle, WA', subtitle: '98107 • Ballard', lat: 47.6698, lon: -122.3848, query: '98107' },
-  { title: 'Seattle, WA', subtitle: '98101 • Downtown Seattle', lat: 47.6101, lon: -122.3344, query: '98101' },
-  { title: 'Seattle, WA', subtitle: '98109 • Queen Anne', lat: 47.6322, lon: -122.3486, query: '98109' },
-  { title: 'Bellevue, WA', subtitle: '98004 • Downtown Bellevue', lat: 47.6166, lon: -122.2014, query: '98004' },
-  { title: 'Kirkland, WA', subtitle: '98033 • Lake Washington', lat: 47.6787, lon: -122.2036, query: '98033' },
+  // Pacific Northwest
+  { title: 'Seattle, WA', subtitle: 'Washington, United States', lat: 47.6062, lon: -122.3321, query: 'Seattle, WA' },
+  { title: 'Bellevue, WA', subtitle: 'Washington, United States', lat: 47.6101, lon: -122.2015, query: 'Bellevue, WA' },
+  { title: 'Kirkland, WA', subtitle: 'Washington, United States', lat: 47.6766, lon: -122.2036, query: 'Kirkland, WA' },
+  { title: 'Redmond, WA', subtitle: 'Washington, United States', lat: 47.6740, lon: -122.1215, query: 'Redmond, WA' },
 
   // New York
-  { title: 'Brooklyn, NY', subtitle: '11215 • Park Slope', lat: 40.6672, lon: -73.9822, query: '11215' },
-  { title: 'Brooklyn, NY', subtitle: '11201 • Brooklyn Heights / Dumbo', lat: 40.6953, lon: -73.9912, query: '11201' },
-  { title: 'New York, NY', subtitle: '10018 • Midtown Manhattan', lat: 40.7554, lon: -73.9926, query: '10018' },
-  { title: 'New York, NY', subtitle: '10001 • Chelsea', lat: 40.7501, lon: -73.9967, query: '10001' },
+  { title: 'New York, NY', subtitle: 'Manhattan, New York', lat: 40.7128, lon: -74.0060, query: 'New York, NY' },
+  { title: 'Brooklyn, NY', subtitle: 'Kings County, New York', lat: 40.6782, lon: -73.9442, query: 'Brooklyn, NY' },
+  { title: 'Queens, NY', subtitle: 'Queens County, New York', lat: 40.7282, lon: -73.7949, query: 'Queens, NY' },
 
-  // Other Metros
-  { title: 'Austin, TX', subtitle: '78701 • Downtown Austin', lat: 30.2711, lon: -97.7437, query: '78701' },
-  { title: 'Chicago, IL', subtitle: '60614 • Lincoln Park', lat: 41.9226, lon: -87.6534, query: '60614' },
-  { title: 'Denver, CO', subtitle: '80202 • Downtown Denver', lat: 39.7541, lon: -104.9975, query: '80202' },
-  { title: 'Boston, MA', subtitle: '02108 • Beacon Hill', lat: 42.3584, lon: -71.0638, query: '02108' },
+  // Other Major Cities
+  { title: 'Chicago, IL', subtitle: 'Illinois, United States', lat: 41.8781, lon: -87.6298, query: 'Chicago, IL' },
+  { title: 'Austin, TX', subtitle: 'Texas, United States', lat: 30.2672, lon: -97.7431, query: 'Austin, TX' },
+  { title: 'Denver, CO', subtitle: 'Colorado, United States', lat: 39.7392, lon: -104.9903, query: 'Denver, CO' },
+  { title: 'Boston, MA', subtitle: 'Massachusetts, United States', lat: 42.3601, lon: -71.0589, query: 'Boston, MA' },
+  { title: 'San Diego, CA', subtitle: 'California, United States', lat: 32.7157, lon: -117.1611, query: 'San Diego, CA' },
+  { title: 'Portland, OR', subtitle: 'Oregon, United States', lat: 45.5152, lon: -122.6784, query: 'Portland, OR' },
+];
+
+// ZIP code entries (only returned when query contains numbers!)
+const ZIP_SUGGESTIONS: AutocompleteItem[] = [
+  { title: '91101', subtitle: 'Pasadena, CA (Downtown / Playhouse)', lat: 34.1449, lon: -118.1381, query: '91101' },
+  { title: '91103', subtitle: 'Pasadena, CA (Northwest)', lat: 34.1675, lon: -118.1633, query: '91103' },
+  { title: '91104', subtitle: 'Pasadena, CA (Bungalow Heaven)', lat: 34.1624, lon: -118.1258, query: '91104' },
+  { title: '91105', subtitle: 'Pasadena, CA (South Arroyo)', lat: 34.1350, lon: -118.1610, query: '91105' },
+  { title: '91106', subtitle: 'Pasadena, CA (Caltech / South Lake)', lat: 34.1388, lon: -118.1258, query: '91106' },
+  { title: '91107', subtitle: 'Pasadena, CA (Hastings Ranch)', lat: 34.1565, lon: -118.0837, query: '91107' },
+  { title: '91030', subtitle: 'South Pasadena, CA', lat: 34.1166, lon: -118.1528, query: '91030' },
+  { title: '91001', subtitle: 'Altadena, CA', lat: 34.1925, lon: -118.1388, query: '91001' },
+  { title: '91205', subtitle: 'Glendale, CA', lat: 34.1438, lon: -118.2525, query: '91205' },
+  { title: '94102', subtitle: 'San Francisco, CA (Civic Center)', lat: 37.7786, lon: -122.4212, query: '94102' },
+  { title: '94110', subtitle: 'San Francisco, CA (Mission)', lat: 37.7500, lon: -122.4153, query: '94110' },
+  { title: '98101', subtitle: 'Seattle, WA (Downtown)', lat: 47.6101, lon: -122.3344, query: '98101' },
+  { title: '98107', subtitle: 'Seattle, WA (Ballard)', lat: 47.6698, lon: -122.3848, query: '98107' },
+  { title: '11215', subtitle: 'Brooklyn, NY (Park Slope)', lat: 40.6672, lon: -73.9822, query: '11215' },
+  { title: '78701', subtitle: 'Austin, TX (Downtown)', lat: 30.2711, lon: -97.7437, query: '78701' },
 ];
 
 export async function GET(req: NextRequest) {
@@ -63,30 +77,38 @@ export async function GET(req: NextRequest) {
   }
 
   const queryLower = q.toLowerCase();
+  const isNumericQuery = /^\d+/.test(q);
 
-  // 1. Filter local suggestions first (instant)
-  const localMatches = LOCAL_SUGGESTIONS.filter(
-    (item) =>
-      item.title.toLowerCase().includes(queryLower) ||
-      item.subtitle.toLowerCase().includes(queryLower) ||
-      item.query.startsWith(queryLower)
-  ).slice(0, 6);
+  // If the user typed digits, search ZIP codes!
+  if (isNumericQuery) {
+    const matchingZips = ZIP_SUGGESTIONS.filter((item) =>
+      item.title.startsWith(queryLower)
+    ).slice(0, 5);
 
-  // If we already have strong local matches, return them immediately
-  if (localMatches.length >= 4) {
-    return NextResponse.json({ suggestions: localMatches });
+    if (matchingZips.length > 0) {
+      return NextResponse.json({ suggestions: matchingZips });
+    }
   }
 
-  // 2. Fetch from OpenStreetMap Nominatim for any other US city or zip
+  // If the user typed text (e.g. "Pasadena"), search clean city entries:
+  const localCityMatches = CITY_SUGGESTIONS.filter((item) =>
+    item.title.toLowerCase().includes(queryLower)
+  ).slice(0, 5);
+
+  if (localCityMatches.length > 0) {
+    return NextResponse.json({ suggestions: localCityMatches });
+  }
+
+  // Fallback to OpenStreetMap Nominatim for any arbitrary US location
   try {
     const encoded = encodeURIComponent(q);
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&addressdetails=1&limit=5&q=${encoded}`,
+      `https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&addressdetails=1&featuretype=city&limit=5&q=${encoded}`,
       {
         headers: {
           'User-Agent': 'StorytimeRadar/1.0 (local-events-app)',
         },
-        signal: AbortSignal.timeout(3000), // Fast 3-second timeout
+        signal: AbortSignal.timeout(3000),
       }
     );
 
@@ -95,33 +117,31 @@ export async function GET(req: NextRequest) {
       const nominatimMatches: AutocompleteItem[] = (data || []).map((item: any) => {
         const parts = item.display_name.split(',').map((s: string) => s.trim());
         const title = parts.slice(0, 2).join(', ');
-        const subtitle = parts.slice(2, 4).join(', ');
+        const subtitle = parts.slice(2, 4).join(', ') || 'United States';
         return {
           title,
-          subtitle: subtitle || 'United States',
+          subtitle,
           lat: parseFloat(item.lat),
           lon: parseFloat(item.lon),
-          query: item.display_name.split(',')[0].trim(),
+          query: title,
         };
       });
 
-      // Combine local + nominatim without duplicates
+      // Deduplicate by title
       const seen = new Set<string>();
-      const combined: AutocompleteItem[] = [];
-
-      for (const item of [...localMatches, ...nominatimMatches]) {
-        const key = `${item.title}-${item.subtitle}`.toLowerCase();
-        if (!seen.has(key)) {
-          seen.add(key);
-          combined.push(item);
+      const deduplicated: AutocompleteItem[] = [];
+      for (const m of nominatimMatches) {
+        if (!seen.has(m.title)) {
+          seen.add(m.title);
+          deduplicated.push(m);
         }
       }
 
-      return NextResponse.json({ suggestions: combined.slice(0, 7) });
+      return NextResponse.json({ suggestions: deduplicated.slice(0, 5) });
     }
   } catch (err) {
-    // If Nominatim fails or times out, return local matches
+    // Return empty on network timeout
   }
 
-  return NextResponse.json({ suggestions: localMatches });
+  return NextResponse.json({ suggestions: [] });
 }
