@@ -1,7 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { LIBRARY_BRANCHES } from './libraries-data';
 import { classifyEvent } from './classifier';
-import { addDays, setHours, setMinutes, startOfWeek, isSameDay } from 'date-fns';
+import { addDays, setHours, setMinutes } from 'date-fns';
 
 interface ProgramTemplate {
   title: string;
@@ -89,11 +89,64 @@ const WEEKLY_PROGRAM_TEMPLATES: ProgramTemplate[] = [
     durationMinutes: 35,
     room: 'Story Corner',
   },
+  {
+    title: 'Bilingual Storytime / Cuentos Bilingües',
+    description: 'Songs, rhymes, and picture books in Spanish and English for families and young children. Un tiempo interactivo para toda la familia.',
+    dayOfWeek: 5, // Friday
+    startHour: 11,
+    startMinute: 0,
+    durationMinutes: 40,
+    room: 'Patio / Community Room',
+  },
 ];
 
-// Branch-specific program variations to keep schedules varied and realistic
+// Branch-specific program variations
 const BRANCH_SCHEDULE_VARIATIONS: Record<string, number[]> = {
-  // e.g. branchId -> indices in WEEKLY_PROGRAM_TEMPLATES that this branch hosts
+  // Pasadena Public Library
+  'ppl-jefferson': [0, 1, 2, 3, 4, 5, 6, 7], // Flagship children's branch
+  'ppl-hastings': [0, 1, 2, 5],
+  'ppl-allendale': [1, 2, 5],
+  'ppl-hill-ave': [0, 1, 5, 7],
+  'ppl-lamanda-park': [1, 3, 5],
+  'ppl-la-pintoresca': [1, 4, 8],
+  'ppl-santa-catalina': [0, 1, 6],
+  'ppl-san-rafael': [2, 5],
+  'ppl-linda-vista': [1, 2],
+
+  // South Pasadena Public Library
+  'sppl-main': [0, 1, 2, 3, 4, 5],
+
+  // Altadena Library District
+  'ald-main': [0, 1, 2, 4, 5],
+  'ald-bob-lucas': [1, 2, 8],
+
+  // Crowell San Marino
+  'crowell-main': [0, 1, 2, 6],
+
+  // Alhambra
+  'alhambra-main': [0, 1, 3, 5],
+
+  // Glendale
+  'glac-central': [0, 1, 2, 3, 5, 6],
+  'glac-brand': [2, 5],
+  'glac-adams-square': [1, 2],
+  'glac-montrose': [0, 1, 5],
+
+  // LA County
+  'lacounty-san-gabriel': [1, 2, 5],
+  'lacounty-temple-city': [0, 1, 5],
+  'lacounty-rosemead': [1, 4, 8],
+  'lacounty-la-canada': [0, 1, 2, 5],
+
+  // LAPL Nearby
+  'lapl-eagle-rock': [0, 1, 2, 5],
+  'lapl-arroyo-seco': [0, 1, 3, 5],
+  'lapl-chinatown': [1, 2],
+  'lapl-lincoln-heights': [1, 8],
+  'lapl-central': [0, 1, 2, 5],
+  'lapl-venice': [0, 1, 5],
+
+  // Seattle
   'spl-ballard': [0, 1, 2, 4, 5],
   'spl-queen-anne': [0, 1, 5, 7],
   'spl-central': [0, 1, 2, 3, 4, 5, 6],
@@ -102,15 +155,18 @@ const BRANCH_SCHEDULE_VARIATIONS: Record<string, number[]> = {
   'kcls-bellevue': [0, 1, 2, 3, 4, 5, 6, 7],
   'kcls-kirkland': [0, 1, 2, 5],
   'kcls-redmond': [0, 1, 3, 5, 6],
+
+  // New York
   'nypl-schwarzman': [0, 1, 2, 5],
   'nypl-snfl': [0, 1, 2, 3, 5, 7],
   'bpl-central': [0, 1, 2, 3, 4, 5, 6],
   'bpl-park-slope': [0, 1, 3, 5],
+
+  // SF & Others
   'sfpl-main': [0, 1, 2, 3, 5],
   'sfpl-mission': [0, 1, 2, 5],
   'cpl-lincoln-park': [0, 1, 3, 5],
   'apl-central': [0, 1, 2, 3, 5, 6],
-  'lapl-central': [0, 1, 2, 5],
 };
 
 export function generateEventsForBranches(
