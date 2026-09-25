@@ -36,6 +36,7 @@ export default function LocationHero({
   };
 
   const samplePresets = [
+    { label: 'Pasadena (91101)', query: '91101' },
     { label: 'Seattle (98107)', query: '98107' },
     { label: 'Brooklyn (11215)', query: '11215' },
     { label: 'San Francisco (94102)', query: '94102' },

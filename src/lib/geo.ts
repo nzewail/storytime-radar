@@ -28,6 +28,25 @@ function toRad(degrees: number): number {
 
 // Built-in instant dictionary of common zip codes & cities for immediate response without external network calls
 const POPULAR_LOCATIONS: Record<string, LocationCoordinates> = {
+  // Pasadena & San Gabriel Valley / LA Area
+  '91101': { lat: 34.1449, lon: -118.1381, displayName: 'Pasadena, CA 91101 (Downtown / Playhouse)', city: 'Pasadena', state: 'CA', zip: '91101' },
+  '91103': { lat: 34.1675, lon: -118.1633, displayName: 'Pasadena, CA 91103 (Northwest / Rose Bowl)', city: 'Pasadena', state: 'CA', zip: '91103' },
+  '91104': { lat: 34.1624, lon: -118.1258, displayName: 'Pasadena, CA 91104 (Bungalow Heaven)', city: 'Pasadena', state: 'CA', zip: '91104' },
+  '91105': { lat: 34.1350, lon: -118.1610, displayName: 'Pasadena, CA 91105 (South Arroyo)', city: 'Pasadena', state: 'CA', zip: '91105' },
+  '91106': { lat: 34.1388, lon: -118.1258, displayName: 'Pasadena, CA 91106 (Caltech / South Lake)', city: 'Pasadena', state: 'CA', zip: '91106' },
+  '91107': { lat: 34.1565, lon: -118.0837, displayName: 'Pasadena, CA 91107 (East Pasadena / Hastings)', city: 'Pasadena', state: 'CA', zip: '91107' },
+  '91030': { lat: 34.1166, lon: -118.1528, displayName: 'South Pasadena, CA 91030', city: 'South Pasadena', state: 'CA', zip: '91030' },
+  '91001': { lat: 34.1925, lon: -118.1388, displayName: 'Altadena, CA 91001', city: 'Altadena', state: 'CA', zip: '91001' },
+  '91108': { lat: 34.1221, lon: -118.1189, displayName: 'San Marino, CA 91108', city: 'San Marino', state: 'CA', zip: '91108' },
+  '91205': { lat: 34.1438, lon: -118.2525, displayName: 'Glendale, CA 91205', city: 'Glendale', state: 'CA', zip: '91205' },
+  '91801': { lat: 34.0955, lon: -118.1287, displayName: 'Alhambra, CA 91801', city: 'Alhambra', state: 'CA', zip: '91801' },
+  '90041': { lat: 34.1396, lon: -118.2114, displayName: 'Los Angeles, CA 90041 (Eagle Rock)', city: 'Los Angeles', state: 'CA', zip: '90041' },
+  '90042': { lat: 34.1105, lon: -118.1923, displayName: 'Los Angeles, CA 90042 (Highland Park)', city: 'Los Angeles', state: 'CA', zip: '90042' },
+  'pasadena': { lat: 34.1478, lon: -118.1445, displayName: 'Pasadena, CA', city: 'Pasadena', state: 'CA' },
+  'south pasadena': { lat: 34.1166, lon: -118.1528, displayName: 'South Pasadena, CA', city: 'South Pasadena', state: 'CA' },
+  'altadena': { lat: 34.1925, lon: -118.1388, displayName: 'Altadena, CA', city: 'Altadena', state: 'CA' },
+  'glendale': { lat: 34.1425, lon: -118.2551, displayName: 'Glendale, CA', city: 'Glendale', state: 'CA' },
+
   // Seattle & King County
   '98101': { lat: 47.6101, lon: -122.3344, displayName: 'Seattle, WA 98101 (Downtown)', city: 'Seattle', state: 'WA', zip: '98101' },
   '98107': { lat: 47.6698, lon: -122.3848, displayName: 'Seattle, WA 98107 (Ballard)', city: 'Seattle', state: 'WA', zip: '98107' },
@@ -118,6 +137,6 @@ export async function geocodeLocation(query: string): Promise<LocationCoordinate
     console.warn('Nominatim geocode failed, falling back to default', err);
   }
 
-  // 4. Default fallback: Seattle downtown
-  return POPULAR_LOCATIONS['98101'];
+  // 4. Default fallback: Pasadena downtown
+  return POPULAR_LOCATIONS['91101'];
 }

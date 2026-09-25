@@ -21,10 +21,10 @@ import { parseISO, getHours } from 'date-fns';
 
 export default function Home() {
   // State
-  const [locationName, setLocationName] = useState<string>('Seattle, WA (98107)');
+  const [locationName, setLocationName] = useState<string>('Pasadena, CA (91101)');
   const [coords, setCoords] = useState<{ lat: number; lon: number }>({
-    lat: 47.6698,
-    lon: -122.3848,
+    lat: 34.1449,
+    lon: -118.1381,
   });
   const [radiusMiles, setRadiusMiles] = useState<number>(10);
 
