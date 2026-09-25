@@ -139,11 +139,30 @@ export default function Home() {
     );
   };
 
+  // Autocomplete suggestion pick
+  const handleSelectSuggestion = (item: { title: string; query: string; lat: number; lon: number }) => {
+    setCoords({ lat: item.lat, lon: item.lon });
+    setLocationName(`${item.title} (${item.query})`);
+  };
+
   // Branch Selection Toggles
   const handleToggleBranch = (branchId: string) => {
     setSelectedBranchIds((prev) =>
       prev.includes(branchId) ? prev.filter((id) => id !== branchId) : [...prev, branchId]
     );
+  };
+
+  // Toggle entire library system (e.g. all Glendale branches at once)
+  const handleToggleSystemBranches = (systemId: string, selectAll: boolean) => {
+    const systemBranchIds = branches.filter((b) => b.systemId === systemId).map((b) => b.id);
+    setSelectedBranchIds((prev) => {
+      if (selectAll) {
+        const set = new Set([...prev, ...systemBranchIds]);
+        return Array.from(set);
+      } else {
+        return prev.filter((id) => !systemBranchIds.includes(id));
+      }
+    });
   };
 
   const handleSelectAllBranches = () => {
@@ -227,7 +246,7 @@ export default function Home() {
     searchFilter.length > 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans text-slate-900 dark:text-slate-100 transition-colors">
       {/* Top Navbar */}
       <Navbar
         locationLabel={locationName}
@@ -236,10 +255,11 @@ export default function Home() {
         onOpenBranchModal={() => setIsBranchModalOpen(true)}
       />
 
-      {/* Hero with Search and Radius */}
+      {/* Hero with Search, Autocomplete and Radius */}
       <LocationHero
         currentLocationName={locationName}
         onSearch={handleSearch}
+        onSelectSuggestion={handleSelectSuggestion}
         onUseCurrentLocation={handleUseCurrentLocation}
         radiusMiles={radiusMiles}
         onRadiusChange={setRadiusMiles}
@@ -303,12 +323,13 @@ export default function Home() {
         systems={systems}
         selectedBranchIds={selectedBranchIds}
         onToggleBranch={handleToggleBranch}
+        onToggleSystemBranches={handleToggleSystemBranches}
         onSelectAll={handleSelectAllBranches}
         onDeselectAll={handleDeselectAllBranches}
       />
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p>
             StorytimeRadar • Built for parents & caregivers hunting for community fun
@@ -316,14 +337,14 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSubscribeModalOpen(true)}
-              className="text-rose-600 hover:text-rose-700 font-semibold"
+              className="text-rose-600 dark:text-rose-400 hover:text-rose-700 font-semibold"
             >
               Get Calendar Feed
             </button>
             <span>•</span>
             <button
               onClick={() => setIsBranchModalOpen(true)}
-              className="text-slate-600 hover:text-slate-900"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             >
               Manage Libraries
             </button>
