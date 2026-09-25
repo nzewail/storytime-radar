@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateEventsForBranches } from '@/lib/event-generator';
+import { fetchLivePasadenaEvents } from '@/lib/pasadena-real-feed';
 import { buildIcalFeed } from '@/lib/ical-builder';
-import { AgeGroup, EventType } from '@/types';
+import { AgeGroup, EventType, StorytimeEvent } from '@/types';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -15,27 +16,45 @@ export async function GET(req: NextRequest) {
   const selectedAges = (agesParam ? agesParam.split(',').map((s) => s.trim()).filter(Boolean) : []) as AgeGroup[];
   const selectedTypes = (typesParam ? typesParam.split(',').map((s) => s.trim()).filter(Boolean) : []) as EventType[];
 
-  // Generate all events for selected branches
-  let events = generateEventsForBranches(branchIds, new Date(), Math.min(daysParam, 90));
+  // 1. Check if any Pasadena branches are requested
+  const hasPasadenaBranches = branchIds.some((id) => id.startsWith('ppl-'));
+  const otherBranchIds = branchIds.filter((id) => !id.startsWith('ppl-'));
 
-  // Filter by age groups if provided
+  let allEvents: StorytimeEvent[] = [];
+
+  if (hasPasadenaBranches) {
+    const livePasadenaEvents = await fetchLivePasadenaEvents();
+    const filteredLive = livePasadenaEvents.filter((e) => branchIds.includes(e.branchId));
+    allEvents.push(...filteredLive);
+  }
+
+  // 2. Generate other branch events
+  if (otherBranchIds.length > 0 || (branchIds.length === 0 && !hasPasadenaBranches)) {
+    const otherEvents = generateEventsForBranches(otherBranchIds, new Date(), Math.min(daysParam, 90));
+    allEvents.push(...otherEvents);
+  }
+
+  // 3. Filter by age groups if provided
   if (selectedAges.length > 0) {
-    events = events.filter((e) => selectedAges.includes(e.ageGroup));
+    allEvents = allEvents.filter((e) => selectedAges.includes(e.ageGroup));
   }
 
-  // Filter by event types if provided
+  // 4. Filter by event types if provided
   if (selectedTypes.length > 0) {
-    events = events.filter((e) => selectedTypes.includes(e.eventType));
+    allEvents = allEvents.filter((e) => selectedTypes.includes(e.eventType));
   }
 
-  const icalString = buildIcalFeed(events, 'Storytime Radar Feed');
+  // Sort chronologically
+  allEvents.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+  const icalString = buildIcalFeed(allEvents, 'Storytime Radar Feed');
 
   return new NextResponse(icalString, {
     status: 200,
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': 'inline; filename="storytimes.ics"',
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      'Cache-Control': 'public, max-age=1800, s-maxage=1800',
     },
   });
 }
