@@ -9,6 +9,7 @@ import {
   Clock,
   MapPin,
   AlertCircle,
+  ExternalLink,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -245,12 +246,25 @@ export default function AgendaView({
 
                       {/* Action buttons */}
                       <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800 shrink-0">
+                        {event.url && (
+                          <a
+                            href={event.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-xl transition-colors border border-indigo-200/60 dark:border-indigo-900/60"
+                            title="Open official library event page"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Event Page</span>
+                          </a>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => onSelectEvent(event)}
                           className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
                         >
-                          View Details
+                          Details
                         </button>
 
                         <a
@@ -261,7 +275,7 @@ export default function AgendaView({
                           title="Add this event to Google Calendar"
                         >
                           <Calendar className="w-3.5 h-3.5" />
-                          <span>+ Google Cal</span>
+                          <span>+ Cal</span>
                         </a>
                       </div>
                     </div>
