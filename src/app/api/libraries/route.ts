@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
   const lat = latStr ? parseFloat(latStr) : null;
   const lon = lonStr ? parseFloat(lonStr) : null;
-  const radius = radiusStr ? parseFloat(radiusStr) : 20; // Default 20 miles
+  const radius = radiusStr ? parseFloat(radiusStr) : 20;
 
   let branchesWithDistance: LibraryBranch[] = LIBRARY_BRANCHES.map((b) => {
     let distanceMiles: number | undefined = undefined;
@@ -24,19 +24,35 @@ export async function GET(req: NextRequest) {
     };
   });
 
+  let withinRadius: LibraryBranch[] = [];
+  let nearestBranch: LibraryBranch | null = null;
+
   if (lat !== null && lon !== null) {
     branchesWithDistance.sort((a, b) => (a.distanceMiles ?? 9999) - (b.distanceMiles ?? 9999));
+    nearestBranch = branchesWithDistance[0] || null;
     
-    // Filter by radius, but ensure at least 3 closest branches are returned so user never gets an empty screen
-    const withinRadius = branchesWithDistance.filter(
+    // Only return branches that are ACTUALLY within the selected radius!
+    withinRadius = branchesWithDistance.filter(
       (b) => b.distanceMiles !== undefined && b.distanceMiles <= radius
     );
-
-    branchesWithDistance = withinRadius.length > 0 ? withinRadius : branchesWithDistance.slice(0, 5);
+  } else {
+    withinRadius = branchesWithDistance;
   }
 
+  // Filter systems to only those that have branches in the result
+  const activeSystemIds = new Set(withinRadius.map((b) => b.systemId));
+  const activeSystems = LIBRARY_SYSTEMS.filter((s) => activeSystemIds.has(s.id));
+
   return NextResponse.json({
-    systems: LIBRARY_SYSTEMS,
-    branches: branchesWithDistance,
+    systems: activeSystems.length > 0 ? activeSystems : LIBRARY_SYSTEMS,
+    branches: withinRadius,
+    totalWithinRadius: withinRadius.length,
+    nearestBranch: withinRadius.length === 0 && nearestBranch ? {
+      name: nearestBranch.name,
+      systemName: nearestBranch.systemName,
+      city: nearestBranch.city,
+      state: nearestBranch.state,
+      distanceMiles: nearestBranch.distanceMiles,
+    } : null,
   });
 }
