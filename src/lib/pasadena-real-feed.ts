@@ -53,6 +53,21 @@ const BRANCH_NAME_TO_ID: Record<string, { id: string; name: string; address: str
   },
 };
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—');
+}
+
 export async function fetchLivePasadenaEvents(): Promise<StorytimeEvent[]> {
   const now = Date.now();
   if (cachedPasadenaEvents && now - cachedPasadenaEvents.timestamp < CACHE_TTL_MS) {
@@ -87,8 +102,8 @@ export async function fetchLivePasadenaEvents(): Promise<StorytimeEvent[]> {
         item.customFields?.find((f: any) => f.label === 'Event Type')?.value || '';
 
       const rawLocation = (item.location || '').replace(/<[^>]+>/g, '').trim().toLowerCase();
-      const rawTitle = (item.title || '').replace(/&amp;/g, '&');
-      const rawDescription = (item.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const rawTitle = decodeHtmlEntities(item.title || '');
+      const rawDescription = decodeHtmlEntities(item.description || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
       // Check if this event targets kids / storytimes
       const textToSearch = `${rawTitle} ${rawDescription} ${audienceField} ${eventTypeField}`.toLowerCase();
