@@ -21,7 +21,7 @@ export interface LibrarySystem {
   state: string;
   website: string;
   color: string;
-  providerType: 'libcal' | 'ical' | 'communico' | 'custom';
+  providerType: 'libcal' | 'ical' | 'communico' | 'trumba' | 'custom';
 }
 
 export interface LibraryBranch {

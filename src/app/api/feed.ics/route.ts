@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateEventsForBranches } from '@/lib/event-generator';
 import { fetchLivePasadenaEvents } from '@/lib/pasadena-real-feed';
+import { fetchLiveSeattleEvents } from '@/lib/seattle-real-feed';
 import { buildIcalFeed } from '@/lib/ical-builder';
 import { AgeGroup, EventType, StorytimeEvent } from '@/types';
 
@@ -16,20 +17,29 @@ export async function GET(req: NextRequest) {
   const selectedAges = (agesParam ? agesParam.split(',').map((s) => s.trim()).filter(Boolean) : []) as AgeGroup[];
   const selectedTypes = (typesParam ? typesParam.split(',').map((s) => s.trim()).filter(Boolean) : []) as EventType[];
 
-  // 1. Check if any Pasadena branches are requested
-  const hasPasadenaBranches = branchIds.some((id) => id.startsWith('ppl-'));
-  const otherBranchIds = branchIds.filter((id) => !id.startsWith('ppl-'));
+  // 1. Separate branch groups
+  const pasadenaBranchIds = branchIds.filter((id) => id.startsWith('ppl-'));
+  const seattleBranchIds = branchIds.filter((id) => id.startsWith('spl-'));
+  const otherBranchIds = branchIds.filter((id) => !id.startsWith('ppl-') && !id.startsWith('spl-'));
 
   let allEvents: StorytimeEvent[] = [];
 
-  if (hasPasadenaBranches) {
+  // Live Pasadena events
+  if (pasadenaBranchIds.length > 0) {
     const livePasadenaEvents = await fetchLivePasadenaEvents();
-    const filteredLive = livePasadenaEvents.filter((e) => branchIds.includes(e.branchId));
+    const filteredLive = livePasadenaEvents.filter((e) => pasadenaBranchIds.includes(e.branchId));
     allEvents.push(...filteredLive);
   }
 
-  // 2. Generate other branch events
-  if (otherBranchIds.length > 0 || (branchIds.length === 0 && !hasPasadenaBranches)) {
+  // Live Seattle events
+  if (seattleBranchIds.length > 0) {
+    const liveSeattleEvents = await fetchLiveSeattleEvents();
+    const filteredLive = liveSeattleEvents.filter((e) => seattleBranchIds.includes(e.branchId));
+    allEvents.push(...filteredLive);
+  }
+
+  // Generate fallback events for branches without live feed scrapers
+  if (otherBranchIds.length > 0 || (branchIds.length === 0 && pasadenaBranchIds.length === 0 && seattleBranchIds.length === 0)) {
     const otherEvents = generateEventsForBranches(otherBranchIds, new Date(), Math.min(daysParam, 90));
     allEvents.push(...otherEvents);
   }
