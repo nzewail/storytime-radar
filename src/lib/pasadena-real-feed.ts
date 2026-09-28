@@ -5,51 +5,79 @@ let cachedPasadenaEvents: { timestamp: number; events: StorytimeEvent[] } | null
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes cache
 
 // Map Trumba location strings to our branch IDs
-const BRANCH_NAME_TO_ID: Record<string, { id: string; name: string; address: string }> = {
-  'linda vista': {
-    id: 'ppl-linda-vista',
-    name: 'Linda Vista Branch',
-    address: '1281 Bryant St, Pasadena, CA 91103',
+interface PasadenaBranchMeta {
+  id: string;
+  legacyId: string;
+  name: string;
+  address: string;
+}
+
+const BRANCH_NAME_TO_ID: Record<string, PasadenaBranchMeta> = {
+  'central': {
+    id: 'imls-ca0094-002',
+    legacyId: 'ppl-central',
+    name: 'Pasadena Central Library',
+    address: '285 E Walnut St, Pasadena, CA 91101',
   },
   'allendale': {
-    id: 'ppl-allendale',
-    name: 'Allendale Branch',
+    id: 'imls-ca0094-003',
+    legacyId: 'ppl-allendale',
+    name: 'Allendale Branch Library',
     address: '1130 S Marengo Ave, Pasadena, CA 91106',
   },
   'hastings': {
-    id: 'ppl-hastings',
-    name: 'Hastings Branch',
+    id: 'imls-ca0094-004',
+    legacyId: 'ppl-hastings',
+    name: 'Hastings Branch Library',
     address: '3325 E Orange Grove Blvd, Pasadena, CA 91107',
   },
-  'hill avenue': {
-    id: 'ppl-hill-ave',
-    name: 'Hill Avenue Branch',
+  'hill': {
+    id: 'imls-ca0094-005',
+    legacyId: 'ppl-hill-ave',
+    name: 'Hill Ave. Branch Library',
     address: '55 S Hill Ave, Pasadena, CA 91106',
   },
-  'jefferson': {
-    id: 'ppl-jefferson',
-    name: "Jefferson Branch (Children's & Youth)",
-    address: '1500 E Villa St, Pasadena, CA 91106',
-  },
   'lamanda park': {
-    id: 'ppl-lamanda-park',
-    name: 'Lamanda Park Branch',
+    id: 'imls-ca0094-006',
+    legacyId: 'ppl-lamanda-park',
+    name: 'Lamanda Park Branch Library',
     address: '140 S Altadena Dr, Pasadena, CA 91107',
   },
   'la pintoresca': {
-    id: 'ppl-la-pintoresca',
-    name: 'La Pintoresca Branch',
+    id: 'imls-ca0094-007',
+    legacyId: 'ppl-la-pintoresca',
+    name: 'La Pintoresca Branch Library',
     address: '1355 N Raymond Ave, Pasadena, CA 91103',
   },
+  'linda vista': {
+    id: 'imls-ca0094-008',
+    legacyId: 'ppl-linda-vista',
+    name: 'Linda Vista Branch Library',
+    address: '1281 Bryant St, Pasadena, CA 91103',
+  },
   'san rafael': {
-    id: 'ppl-san-rafael',
-    name: 'San Rafael Branch',
-    address: '1240 Nithsdale Rd, Pasadena, CA 91105',
+    id: 'imls-ca0094-009',
+    legacyId: 'ppl-san-rafael',
+    name: 'San Rafael Branch Library',
+    address: '1240 Nithsdale, Pasadena, CA 91105',
   },
   'santa catalina': {
-    id: 'ppl-santa-catalina',
-    name: 'Santa Catalina Branch',
+    id: 'imls-ca0094-010',
+    legacyId: 'ppl-santa-catalina',
+    name: 'Santa Catalina Branch Library',
     address: '999 E Washington Blvd, Pasadena, CA 91104',
+  },
+  'villa parke': {
+    id: 'imls-ca0094-012',
+    legacyId: 'ppl-villa-parke',
+    name: 'Villa Parke Community Center Library',
+    address: '363 E Villa, Pasadena, CA 91101',
+  },
+  'jefferson': {
+    id: 'imls-ca0094-002',
+    legacyId: 'ppl-jefferson',
+    name: "Jefferson Branch (Children's & Youth)",
+    address: '1500 E Villa St, Pasadena, CA 91106',
   },
 };
 
