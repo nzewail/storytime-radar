@@ -1,84 +1,23 @@
-import { StorytimeEvent } from '@/types';
+import { StorytimeEvent, LibraryBranch } from '@/types';
+import { getBranchById } from './imls-db';
 import { classifyEvent } from './classifier';
 
 let cachedPasadenaEvents: { timestamp: number; events: StorytimeEvent[] } | null = null;
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes cache
 
-// Map Trumba location strings to our branch IDs
-interface PasadenaBranchMeta {
-  id: string;
-  legacyId: string;
-  name: string;
-  address: string;
-}
-
-const BRANCH_NAME_TO_ID: Record<string, PasadenaBranchMeta> = {
-  'central': {
-    id: 'imls-ca0094-002',
-    legacyId: 'ppl-central',
-    name: 'Pasadena Central Library',
-    address: '285 E Walnut St, Pasadena, CA 91101',
-  },
-  'allendale': {
-    id: 'imls-ca0094-003',
-    legacyId: 'ppl-allendale',
-    name: 'Allendale Branch Library',
-    address: '1130 S Marengo Ave, Pasadena, CA 91106',
-  },
-  'hastings': {
-    id: 'imls-ca0094-004',
-    legacyId: 'ppl-hastings',
-    name: 'Hastings Branch Library',
-    address: '3325 E Orange Grove Blvd, Pasadena, CA 91107',
-  },
-  'hill': {
-    id: 'imls-ca0094-005',
-    legacyId: 'ppl-hill-ave',
-    name: 'Hill Ave. Branch Library',
-    address: '55 S Hill Ave, Pasadena, CA 91106',
-  },
-  'lamanda park': {
-    id: 'imls-ca0094-006',
-    legacyId: 'ppl-lamanda-park',
-    name: 'Lamanda Park Branch Library',
-    address: '140 S Altadena Dr, Pasadena, CA 91107',
-  },
-  'la pintoresca': {
-    id: 'imls-ca0094-007',
-    legacyId: 'ppl-la-pintoresca',
-    name: 'La Pintoresca Branch Library',
-    address: '1355 N Raymond Ave, Pasadena, CA 91103',
-  },
-  'linda vista': {
-    id: 'imls-ca0094-008',
-    legacyId: 'ppl-linda-vista',
-    name: 'Linda Vista Branch Library',
-    address: '1281 Bryant St, Pasadena, CA 91103',
-  },
-  'san rafael': {
-    id: 'imls-ca0094-009',
-    legacyId: 'ppl-san-rafael',
-    name: 'San Rafael Branch Library',
-    address: '1240 Nithsdale, Pasadena, CA 91105',
-  },
-  'santa catalina': {
-    id: 'imls-ca0094-010',
-    legacyId: 'ppl-santa-catalina',
-    name: 'Santa Catalina Branch Library',
-    address: '999 E Washington Blvd, Pasadena, CA 91104',
-  },
-  'villa parke': {
-    id: 'imls-ca0094-012',
-    legacyId: 'ppl-villa-parke',
-    name: 'Villa Parke Community Center Library',
-    address: '363 E Villa, Pasadena, CA 91101',
-  },
-  'jefferson': {
-    id: 'imls-ca0094-002',
-    legacyId: 'ppl-jefferson',
-    name: "Jefferson Branch (Children's & Youth)",
-    address: '1500 E Villa St, Pasadena, CA 91106',
-  },
+// Map Trumba location strings to federal IMLS branch IDs
+const BRANCH_KEYWORD_TO_IMLS_ID: Record<string, string> = {
+  'central': 'imls-ca0094-002',
+  'allendale': 'imls-ca0094-003',
+  'hastings': 'imls-ca0094-004',
+  'hill': 'imls-ca0094-005',
+  'lamanda park': 'imls-ca0094-006',
+  'la pintoresca': 'imls-ca0094-007',
+  'linda vista': 'imls-ca0094-008',
+  'san rafael': 'imls-ca0094-009',
+  'santa catalina': 'imls-ca0094-010',
+  'villa parke': 'imls-ca0094-012',
+  'jefferson': 'imls-ca0094-002',
 };
 
 function decodeHtmlEntities(str: string): string {
@@ -142,11 +81,11 @@ export async function fetchLivePasadenaEvents(): Promise<StorytimeEvent[]> {
 
       if (!isKidEvent) continue;
 
-      // Match branch
-      let branchInfo: { id: string; name: string; address: string } | null = null;
-      for (const [key, b] of Object.entries(BRANCH_NAME_TO_ID)) {
+      // Resolve branch metadata directly from the database
+      let branchInfo: LibraryBranch | null = null;
+      for (const [key, branchId] of Object.entries(BRANCH_KEYWORD_TO_IMLS_ID)) {
         if (rawLocation.includes(key) || textToSearch.includes(key)) {
-          branchInfo = b;
+          branchInfo = getBranchById(branchId) || null;
           break;
         }
       }
@@ -168,12 +107,12 @@ export async function fetchLivePasadenaEvents(): Promise<StorytimeEvent[]> {
 
       realEvents.push({
         id: `ppl-${item.eventID}`,
-        systemId: 'ppl',
-        systemName: 'Pasadena Public Library',
+        systemId: branchInfo.systemId,
+        systemName: branchInfo.systemName,
         branchId: branchInfo.id,
         branchName: branchInfo.name,
-        branchAddress: branchInfo.address,
-        branchCity: 'Pasadena',
+        branchAddress: `${branchInfo.address}, ${branchInfo.city}, ${branchInfo.state} ${branchInfo.zip}`,
+        branchCity: branchInfo.city,
         title: rawTitle,
         description: rawDescription,
         startTime,
@@ -182,7 +121,7 @@ export async function fetchLivePasadenaEvents(): Promise<StorytimeEvent[]> {
         ageRangeText: audienceField ? audienceField.split(',')[0].trim() : ageRangeText,
         eventType,
         roomOrLocation: branchInfo.name,
-        url: item.permaLinkUrl || 'https://www.cityofpasadena.net/library/',
+        url: item.permaLinkUrl || branchInfo.website || 'https://www.cityofpasadena.net/library/',
         isRegistrationRequired: item.openSignUp || isRegistrationRequired,
       });
     }
@@ -194,7 +133,7 @@ export async function fetchLivePasadenaEvents(): Promise<StorytimeEvent[]> {
 
     return realEvents;
   } catch (err) {
-    console.warn('Failed to fetch live Pasadena feed:', err);
+    console.error('Failed to fetch Pasadena live events:', err);
     return cachedPasadenaEvents ? cachedPasadenaEvents.events : [];
   }
 }

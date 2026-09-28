@@ -1,4 +1,5 @@
 import { LocationCoordinates } from '@/types';
+import { lookupLocation } from './imls-db';
 
 // Earth radius in miles
 const EARTH_RADIUS_MILES = 3958.8;
@@ -26,88 +27,24 @@ function toRad(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
 
-// Built-in instant dictionary of common zip codes & cities for immediate response
-const POPULAR_LOCATIONS: Record<string, LocationCoordinates> = {
-  // Pasadena & San Gabriel Valley / LA Area
-  '91101': { lat: 34.1449, lon: -118.1381, displayName: 'Pasadena, CA 91101 (Downtown / Playhouse)', city: 'Pasadena', state: 'CA', zip: '91101' },
-  '91103': { lat: 34.1675, lon: -118.1633, displayName: 'Pasadena, CA 91103 (Northwest / Rose Bowl)', city: 'Pasadena', state: 'CA', zip: '91103' },
-  '91104': { lat: 34.1624, lon: -118.1258, displayName: 'Pasadena, CA 91104 (Bungalow Heaven)', city: 'Pasadena', state: 'CA', zip: '91104' },
-  '91105': { lat: 34.1350, lon: -118.1610, displayName: 'Pasadena, CA 91105 (South Arroyo)', city: 'Pasadena', state: 'CA', zip: '91105' },
-  '91106': { lat: 34.1388, lon: -118.1258, displayName: 'Pasadena, CA 91106 (Caltech / South Lake)', city: 'Pasadena', state: 'CA', zip: '91106' },
-  '91107': { lat: 34.1565, lon: -118.0837, displayName: 'Pasadena, CA 91107 (East Pasadena / Hastings)', city: 'Pasadena', state: 'CA', zip: '91107' },
-  '91030': { lat: 34.1166, lon: -118.1528, displayName: 'South Pasadena, CA 91030', city: 'South Pasadena', state: 'CA', zip: '91030' },
-  '91001': { lat: 34.1925, lon: -118.1388, displayName: 'Altadena, CA 91001', city: 'Altadena', state: 'CA', zip: '91001' },
-  '91108': { lat: 34.1221, lon: -118.1189, displayName: 'San Marino, CA 91108', city: 'San Marino', state: 'CA', zip: '91108' },
-  '91205': { lat: 34.1438, lon: -118.2525, displayName: 'Glendale, CA 91205', city: 'Glendale', state: 'CA', zip: '91205' },
-  '91801': { lat: 34.0955, lon: -118.1287, displayName: 'Alhambra, CA 91801', city: 'Alhambra', state: 'CA', zip: '91801' },
-  '90041': { lat: 34.1396, lon: -118.2114, displayName: 'Los Angeles, CA 90041 (Eagle Rock)', city: 'Los Angeles', state: 'CA', zip: '90041' },
-  '90042': { lat: 34.1105, lon: -118.1923, displayName: 'Los Angeles, CA 90042 (Highland Park)', city: 'Los Angeles', state: 'CA', zip: '90042' },
-  'pasadena, ca': { lat: 34.1478, lon: -118.1445, displayName: 'Pasadena, CA', city: 'Pasadena', state: 'CA' },
-  'south pasadena, ca': { lat: 34.1166, lon: -118.1528, displayName: 'South Pasadena, CA', city: 'South Pasadena', state: 'CA' },
-  'altadena, ca': { lat: 34.1925, lon: -118.1388, displayName: 'Altadena, CA', city: 'Altadena', state: 'CA' },
-  'glendale, ca': { lat: 34.1425, lon: -118.2551, displayName: 'Glendale, CA', city: 'Glendale', state: 'CA' },
-
-  // Pasadena, Texas (Houston metro)
-  '77504': { lat: 29.6586, lon: -95.1916, displayName: 'Pasadena, TX 77504', city: 'Pasadena', state: 'TX', zip: '77504' },
-  '77506': { lat: 29.6911, lon: -95.2091, displayName: 'Pasadena, TX 77506', city: 'Pasadena', state: 'TX', zip: '77506' },
-  'pasadena, tx': { lat: 29.6911, lon: -95.2091, displayName: 'Pasadena, TX', city: 'Pasadena', state: 'TX' },
-
-  // Seattle & King County
-  '98101': { lat: 47.6101, lon: -122.3344, displayName: 'Seattle, WA 98101 (Downtown)', city: 'Seattle', state: 'WA', zip: '98101' },
-  '98107': { lat: 47.6698, lon: -122.3848, displayName: 'Seattle, WA 98107 (Ballard)', city: 'Seattle', state: 'WA', zip: '98107' },
-  '98109': { lat: 47.6322, lon: -122.3486, displayName: 'Seattle, WA 98109 (Queen Anne)', city: 'Seattle', state: 'WA', zip: '98109' },
-  '98103': { lat: 47.6734, lon: -122.3426, displayName: 'Seattle, WA 98103 (Fremont / Green Lake)', city: 'Seattle', state: 'WA', zip: '98103' },
-  '98004': { lat: 47.6166, lon: -122.2014, displayName: 'Bellevue, WA 98004', city: 'Bellevue', state: 'WA', zip: '98004' },
-  'seattle, wa': { lat: 47.6062, lon: -122.3321, displayName: 'Seattle, WA', city: 'Seattle', state: 'WA' },
-
-  // New York City
-  '10001': { lat: 40.7501, lon: -73.9967, displayName: 'New York, NY 10001 (Chelsea)', city: 'New York', state: 'NY', zip: '10001' },
-  '10018': { lat: 40.7554, lon: -73.9926, displayName: 'New York, NY 10018 (Midtown)', city: 'New York', state: 'NY', zip: '10018' },
-  '11201': { lat: 40.6953, lon: -73.9912, displayName: 'Brooklyn, NY 11201 (Brooklyn Heights)', city: 'Brooklyn', state: 'NY', zip: '11201' },
-  '11215': { lat: 40.6672, lon: -73.9822, displayName: 'Brooklyn, NY 11215 (Park Slope)', city: 'Brooklyn', state: 'NY', zip: '11215' },
-  'new york, ny': { lat: 40.7128, lon: -74.006, displayName: 'New York, NY', city: 'New York', state: 'NY' },
-  'brooklyn, ny': { lat: 40.6782, lon: -73.9442, displayName: 'Brooklyn, NY', city: 'Brooklyn', state: 'NY' },
-
-  // San Francisco Bay Area
-  '94102': { lat: 37.7786, lon: -122.4212, displayName: 'San Francisco, CA 94102 (Civic Center)', city: 'San Francisco', state: 'CA', zip: '94102' },
-  '94110': { lat: 37.7500, lon: -122.4153, displayName: 'San Francisco, CA 94110 (Mission District)', city: 'San Francisco', state: 'CA', zip: '94110' },
-  '94118': { lat: 37.7818, lon: -122.4571, displayName: 'San Francisco, CA 94118 (Richmond)', city: 'San Francisco', state: 'CA', zip: '94118' },
-  'san francisco, ca': { lat: 37.7749, lon: -122.4194, displayName: 'San Francisco, CA', city: 'San Francisco', state: 'CA' },
-
-  // Chicago
-  '60601': { lat: 41.8864, lon: -87.6247, displayName: 'Chicago, IL 60601 (The Loop)', city: 'Chicago', state: 'IL', zip: '60601' },
-  '60614': { lat: 41.9226, lon: -87.6534, displayName: 'Chicago, IL 60614 (Lincoln Park)', city: 'Chicago', state: 'IL', zip: '60614' },
-  'chicago, il': { lat: 41.8781, lon: -87.6298, displayName: 'Chicago, IL', city: 'Chicago', state: 'IL' },
-
-  // Austin
-  '78701': { lat: 30.2711, lon: -97.7437, displayName: 'Austin, TX 78701 (Downtown)', city: 'Austin', state: 'TX', zip: '78701' },
-  'austin, tx': { lat: 30.2672, lon: -97.7431, displayName: 'Austin, TX', city: 'Austin', state: 'TX' },
-
-  // Boston
-  '02108': { lat: 42.3584, lon: -71.0638, displayName: 'Boston, MA 02108', city: 'Boston', state: 'MA', zip: '02108' },
-  'boston, ma': { lat: 42.3601, lon: -71.0589, displayName: 'Boston, MA', city: 'Boston', state: 'MA' },
-
-  // Denver
-  '80202': { lat: 39.7541, lon: -104.9975, displayName: 'Denver, CO 80202', city: 'Denver', state: 'CO', zip: '80202' },
-  'denver, co': { lat: 39.7392, lon: -104.9903, displayName: 'Denver, CO', city: 'Denver', state: 'CO' },
-};
-
+/**
+ * Geocodes any query nationwide:
+ * 1. Checks the federal IMLS public library database index for instant (<1ms) city / ZIP resolution.
+ * 2. Falls back to OpenStreetMap Nominatim for specific street addresses, landmarks, or parks.
+ */
 export async function geocodeLocation(query: string): Promise<LocationCoordinates | null> {
-  const normalized = query.trim().toLowerCase();
+  const cleanQuery = query.trim();
+  if (!cleanQuery) return null;
 
-  // 1. Exact match in pre-populated table
-  if (POPULAR_LOCATIONS[normalized]) {
-    return POPULAR_LOCATIONS[normalized];
+  // 1. Direct lookup from the federal IMLS database
+  const dbMatch = lookupLocation(cleanQuery);
+  if (dbMatch) {
+    return dbMatch;
   }
 
-  // 2. Exact 5-digit zip code match
-  if (/^\d{5}$/.test(normalized) && POPULAR_LOCATIONS[normalized]) {
-    return POPULAR_LOCATIONS[normalized];
-  }
-
-  // 3. Fallback to OpenStreetMap Nominatim for accurate nationwide resolution
+  // 2. Fallback to OpenStreetMap Nominatim for arbitrary street addresses or specific locations
   try {
-    const encoded = encodeURIComponent(query);
+    const encoded = encodeURIComponent(cleanQuery);
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&countrycodes=us&limit=1&q=${encoded}`,
       {
@@ -132,11 +69,6 @@ export async function geocodeLocation(query: string): Promise<LocationCoordinate
     }
   } catch (err) {
     console.warn('Nominatim geocode failed or timed out:', err);
-  }
-
-  // 4. If query is just "pasadena", default to Pasadena, CA
-  if (normalized === 'pasadena') {
-    return POPULAR_LOCATIONS['pasadena, ca'];
   }
 
   return null;

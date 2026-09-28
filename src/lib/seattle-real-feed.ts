@@ -1,186 +1,40 @@
-import { StorytimeEvent } from '@/types';
+import { StorytimeEvent, LibraryBranch } from '@/types';
+import { getBranchById } from './imls-db';
 import { classifyEvent } from './classifier';
 
 let cachedSeattleEvents: { timestamp: number; events: StorytimeEvent[] } | null = null;
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes cache
 
-// Map Trumba location strings to our Seattle branch metadata
-interface SeattleBranchMeta {
-  id: string;
-  legacyId: string;
-  name: string;
-  address: string;
-}
-
-const SEATTLE_BRANCHES: Record<string, SeattleBranchMeta> = {
-  'central': {
-    id: 'imls-wa0064-002',
-    legacyId: 'spl-central',
-    name: 'Central Library',
-    address: '1000 4th Ave, Seattle, WA 98104',
-  },
-  'ballard': {
-    id: 'imls-wa0064-003',
-    legacyId: 'spl-ballard',
-    name: 'Ballard Branch',
-    address: '5614 22nd Ave NW, Seattle, WA 98107',
-  },
-  'beacon hill': {
-    id: 'imls-wa0064-014',
-    legacyId: 'spl-beacon-hill',
-    name: 'Beacon Hill Branch',
-    address: '2821 Beacon Ave S, Seattle, WA 98144',
-  },
-  'broadview': {
-    id: 'imls-wa0064-004',
-    legacyId: 'spl-broadview',
-    name: 'Broadview Branch',
-    address: '12755 Greenwood Ave N, Seattle, WA 98133',
-  },
-  'capitol hill': {
-    id: 'imls-wa0064-017',
-    legacyId: 'spl-capitol-hill',
-    name: 'Capitol Hill Branch',
-    address: '425 Harvard Ave E, Seattle, WA 98102',
-  },
-  'columbia': {
-    id: 'imls-wa0064-015',
-    legacyId: 'spl-columbia',
-    name: 'Columbia Branch',
-    address: '4721 Rainier Ave S, Seattle, WA 98118',
-  },
-  'delridge': {
-    id: 'imls-wa0064-027',
-    legacyId: 'spl-delridge',
-    name: 'Delridge Branch',
-    address: '5423 Delridge Way SW, Seattle, WA 98106',
-  },
-  'douglass-truth': {
-    id: 'imls-wa0064-016',
-    legacyId: 'spl-douglass-truth',
-    name: 'Douglass-Truth Branch',
-    address: '2300 E Yesler Way, Seattle, WA 98122',
-  },
-  'fremont': {
-    id: 'imls-wa0064-005',
-    legacyId: 'spl-fremont',
-    name: 'Fremont Branch',
-    address: '731 N 35th St, Seattle, WA 98103',
-  },
-  'green lake': {
-    id: 'imls-wa0064-006',
-    legacyId: 'spl-green-lake',
-    name: 'Green Lake Branch',
-    address: '7364 E Green Lake Dr N, Seattle, WA 98115',
-  },
-  'greenwood': {
-    id: 'imls-wa0064-007',
-    legacyId: 'spl-greenwood',
-    name: 'Greenwood Branch',
-    address: '8016 Greenwood Ave N, Seattle, WA 98103',
-  },
-  'high point': {
-    id: 'imls-wa0064-018',
-    legacyId: 'spl-high-point',
-    name: 'High Point Branch',
-    address: '3411 SW Raymond St, Seattle, WA 98126',
-  },
-  'international district': {
-    id: 'imls-wa0064-028',
-    legacyId: 'spl-id-chinatown',
-    name: 'International District/Chinatown Branch',
-    address: '713 8th Ave S, Seattle, WA 98104',
-  },
-  'chinatown': {
-    id: 'imls-wa0064-028',
-    legacyId: 'spl-id-chinatown',
-    name: 'International District/Chinatown Branch',
-    address: '713 8th Ave S, Seattle, WA 98104',
-  },
-  'lake city': {
-    id: 'imls-wa0064-008',
-    legacyId: 'spl-lake-city',
-    name: 'Lake City Branch',
-    address: '12501 28th Ave NE, Seattle, WA 98125',
-  },
-  'madrona': {
-    id: 'imls-wa0064-020',
-    legacyId: 'spl-madrona',
-    name: 'Madrona-Sally Goldmark Branch',
-    address: '1134 33rd Ave, Seattle, WA 98122',
-  },
-  'magnolia': {
-    id: 'imls-wa0064-009',
-    legacyId: 'spl-magnolia',
-    name: 'Magnolia Branch',
-    address: '2801 34th Ave W, Seattle, WA 98199',
-  },
-  'montlake': {
-    id: 'imls-wa0064-021',
-    legacyId: 'spl-montlake',
-    name: 'Montlake Branch',
-    address: '2401 24th Ave E, Seattle, WA 98112',
-  },
-  'newholly': {
-    id: 'imls-wa0064-019',
-    legacyId: 'spl-newholly',
-    name: 'NewHolly Branch',
-    address: '7058 32nd Ave S, Seattle, WA 98118',
-  },
-  'northeast': {
-    id: 'imls-wa0064-010',
-    legacyId: 'spl-northeast',
-    name: 'Northeast Branch',
-    address: '6801 35th Ave NE, Seattle, WA 98115',
-  },
-  'northgate': {
-    id: 'imls-wa0064-029',
-    legacyId: 'spl-northgate',
-    name: 'Northgate Branch',
-    address: '10548 5th Ave NE, Seattle, WA 98125',
-  },
-  'queen anne': {
-    id: 'imls-wa0064-011',
-    legacyId: 'spl-queen-anne',
-    name: 'Queen Anne Branch',
-    address: '400 W Garfield St, Seattle, WA 98119',
-  },
-  'rainier beach': {
-    id: 'imls-wa0064-022',
-    legacyId: 'spl-rainier-beach',
-    name: 'Rainier Beach Branch',
-    address: '9125 Rainier Ave S, Seattle, WA 98118',
-  },
-  'south park': {
-    id: 'imls-wa0064-030',
-    legacyId: 'spl-south-park',
-    name: 'South Park Branch',
-    address: '8604 8th Ave S, Seattle, WA 98108',
-  },
-  'southwest': {
-    id: 'imls-wa0064-023',
-    legacyId: 'spl-southwest',
-    name: 'Southwest Branch',
-    address: '9010 35th Ave SW, Seattle, WA 98126',
-  },
-  'university': {
-    id: 'imls-wa0064-012',
-    legacyId: 'spl-university',
-    name: 'University Branch',
-    address: '5009 Roosevelt Way NE, Seattle, WA 98105',
-  },
-  'wallingford': {
-    id: 'imls-wa0064-013',
-    legacyId: 'spl-wallingford',
-    name: 'Wallingford Branch',
-    address: '1501 N 45th St, Seattle, WA 98103',
-  },
-  'west seattle': {
-    id: 'imls-wa0064-024',
-    legacyId: 'spl-west-seattle',
-    name: 'West Seattle Branch',
-    address: '2306 42nd Ave SW, Seattle, WA 98116',
-  },
+// Map Trumba location keywords to federal IMLS branch IDs
+const BRANCH_KEYWORD_TO_IMLS_ID: Record<string, string> = {
+  'central': 'imls-wa0064-002',
+  'ballard': 'imls-wa0064-003',
+  'broadview': 'imls-wa0064-004',
+  'fremont': 'imls-wa0064-005',
+  'green lake': 'imls-wa0064-006',
+  'greenwood': 'imls-wa0064-007',
+  'lake city': 'imls-wa0064-008',
+  'magnolia': 'imls-wa0064-009',
+  'northeast': 'imls-wa0064-010',
+  'queen anne': 'imls-wa0064-011',
+  'university': 'imls-wa0064-012',
+  'wallingford': 'imls-wa0064-013',
+  'beacon hill': 'imls-wa0064-014',
+  'columbia': 'imls-wa0064-015',
+  'douglass-truth': 'imls-wa0064-016',
+  'capitol hill': 'imls-wa0064-017',
+  'high point': 'imls-wa0064-018',
+  'newholly': 'imls-wa0064-019',
+  'madrona': 'imls-wa0064-020',
+  'montlake': 'imls-wa0064-021',
+  'rainier beach': 'imls-wa0064-022',
+  'southwest': 'imls-wa0064-023',
+  'west seattle': 'imls-wa0064-024',
+  'delridge': 'imls-wa0064-027',
+  'international district': 'imls-wa0064-028',
+  'chinatown': 'imls-wa0064-028',
+  'northgate': 'imls-wa0064-029',
+  'south park': 'imls-wa0064-030',
 };
 
 function decodeHtmlEntities(str: string): string {
@@ -254,13 +108,13 @@ export async function fetchLiveSeattleEvents(): Promise<StorytimeEvent[]> {
 
       if (!isKidEvent) continue;
 
-      // Match branch
-      let branchInfo: SeattleBranchMeta | null = null;
+      // Resolve branch metadata directly from the database
+      let branchInfo: LibraryBranch | null = null;
       const lowerLoc = rawLocation.toLowerCase();
 
-      for (const [key, b] of Object.entries(SEATTLE_BRANCHES)) {
+      for (const [key, branchId] of Object.entries(BRANCH_KEYWORD_TO_IMLS_ID)) {
         if (lowerLoc.includes(key)) {
-          branchInfo = b;
+          branchInfo = getBranchById(branchId) || null;
           break;
         }
       }
@@ -284,7 +138,7 @@ export async function fetchLiveSeattleEvents(): Promise<StorytimeEvent[]> {
         item.permaLinkUrl ||
         (item.eventID
           ? `https://www.spl.org/event-calendar?trumbaEmbed=view%3Devent%26eventid%3D${item.eventID}`
-          : 'https://www.spl.org/event-calendar');
+          : branchInfo.website || 'https://www.spl.org/event-calendar');
 
       const isReg =
         item.openSignUp === true ||
@@ -293,12 +147,12 @@ export async function fetchLiveSeattleEvents(): Promise<StorytimeEvent[]> {
 
       realEvents.push({
         id: `spl-${item.eventID}`,
-        systemId: 'spl',
-        systemName: 'Seattle Public Library',
+        systemId: branchInfo.systemId,
+        systemName: branchInfo.systemName,
         branchId: branchInfo.id,
         branchName: branchInfo.name,
-        branchAddress: branchInfo.address,
-        branchCity: 'Seattle',
+        branchAddress: `${branchInfo.address}, ${branchInfo.city}, ${branchInfo.state} ${branchInfo.zip}`,
+        branchCity: branchInfo.city,
         title: rawTitle,
         description: rawDescription,
         startTime,
