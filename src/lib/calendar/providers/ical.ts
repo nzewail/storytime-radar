@@ -1,7 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
-import { parseLocalDateTimeToIso } from '../timezone';
+import { parseLocalDateTimeToIso, getTimezoneForState } from '../timezone';
 
 function parseIcalDate(val: string, branchState?: string): string {
   if (val.trim().endsWith('Z')) {
@@ -107,6 +107,7 @@ export async function fetchIcalEvents(
         url: eventUrl || branch.website,
         branchUrl: getBranchPageUrl(branch),
         isRegistrationRequired: classification.isRegistrationRequired,
+        timezone: getTimezoneForState(branch.state),
       });
     }
 

@@ -16,6 +16,7 @@ import {
   Navigation,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatEventDate, formatEventTime } from '@/lib/calendar/timezone';
 
 interface EventModalProps {
   event: StorytimeEvent | null;
@@ -116,12 +117,12 @@ export default function EventModal({ event, onClose }: EventModalProps) {
             <Calendar className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <div>
               <div className="font-semibold text-slate-900 dark:text-white">
-                {format(startDate, 'EEEE, MMMM d, yyyy')}
+                {formatEventDate(event.startTime, event.timezone, 'full')}
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 <span>
-                  {format(startDate, 'h:mm a')} – {format(endDate, 'h:mm a')}
+                  {formatEventTime(event.startTime, event.timezone)} – {formatEventTime(event.endTime, event.timezone)}
                 </span>
               </div>
             </div>

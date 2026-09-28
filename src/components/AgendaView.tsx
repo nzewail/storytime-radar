@@ -16,6 +16,7 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
+import { formatEventTime, getEventDayKey } from '@/lib/calendar/timezone';
 
 interface AgendaViewProps {
   events: StorytimeEvent[];
@@ -64,9 +65,9 @@ export default function AgendaView({
   const endIndex = Math.min(startIndex + pageSize, events.length);
   const pagedEvents = events.slice(startIndex, endIndex);
 
-  // Group paginated events by local day string "YYYY-MM-DD"
+  // Group paginated events by day string "YYYY-MM-DD" in event's local timezone
   const groupedEvents = pagedEvents.reduce((acc, ev) => {
-    const dayKey = format(parseISO(ev.startTime), 'yyyy-MM-dd');
+    const dayKey = getEventDayKey(ev.startTime, ev.timezone);
     if (!acc[dayKey]) {
       acc[dayKey] = [];
     }
@@ -239,7 +240,7 @@ export default function AgendaView({
                           <div className="flex items-center gap-1 font-semibold text-slate-900 dark:text-slate-200">
                             <Clock className="w-3.5 h-3.5 text-rose-500" />
                             <span>
-                              {format(startDate, 'h:mm a')} – {format(endDate, 'h:mm a')}
+                              {formatEventTime(event.startTime, event.timezone)} – {formatEventTime(event.endTime, event.timezone)}
                             </span>
                           </div>
 

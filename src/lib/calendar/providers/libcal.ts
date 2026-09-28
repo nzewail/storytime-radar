@@ -1,7 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
-import { combineDateAndTimeToIso } from '../timezone';
+import { combineDateAndTimeToIso, getTimezoneForState } from '../timezone';
 
 const libcalCache = new Map<string, { timestamp: number; events: StorytimeEvent[] }>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -113,6 +113,7 @@ export async function fetchLibCalEvents(
         roomOrLocation: place || matchedBranch.name,
         url: eventUrl,
         isRegistrationRequired: classification.isRegistrationRequired,
+        timezone: getTimezoneForState(matchedBranch.state),
       });
     }
 

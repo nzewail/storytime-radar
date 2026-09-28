@@ -61,6 +61,7 @@ export interface StorytimeEvent {
   url?: string;
   isRegistrationRequired?: boolean;
   color?: string;
+  timezone?: string;
 }
 
 export interface LocationCoordinates {
