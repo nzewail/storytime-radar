@@ -1,5 +1,6 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { LIBRARY_BRANCHES } from './libraries-data';
+import { getBranchesByIds, getBranchById, loadAllLibraries } from './imls-db';
 import { classifyEvent } from './classifier';
 import { addDays, setHours, setMinutes } from 'date-fns';
 
@@ -183,13 +184,39 @@ export function generateEventsForBranches(
   const totalDays = daysAhead + 7;
 
   // Selected branches or all branches
-  const branches = branchIds.length > 0
-    ? LIBRARY_BRANCHES.filter((b) => branchIds.includes(b.id))
-    : LIBRARY_BRANCHES;
+  let branches: LibraryBranch[] = [];
+  if (branchIds.length > 0) {
+    branches = getBranchesByIds(branchIds);
+    // If any IDs are from legacy static list, merge them
+    if (branches.length < branchIds.length) {
+      const foundIds = new Set(branches.map((b) => b.id));
+      const missingIds = branchIds.filter((id) => !foundIds.has(id));
+      const legacyBranches = LIBRARY_BRANCHES.filter((b) => missingIds.includes(b.id));
+      branches.push(...legacyBranches);
+    }
+  } else {
+    branches = loadAllLibraries().slice(0, 10);
+  }
+
+  const schedulePresets = [
+    [0, 1, 2, 5],
+    [1, 2, 4, 6],
+    [0, 2, 3, 5],
+    [1, 3, 5, 7],
+    [0, 1, 5, 8],
+    [2, 4, 5, 6],
+  ];
 
   for (const branch of branches) {
+    // Deterministic distribution per branch
+    let hash = 0;
+    for (let i = 0; i < branch.id.length; i++) {
+      hash = (hash << 5) - hash + branch.id.charCodeAt(i);
+      hash |= 0;
+    }
     const templateIndices =
-      BRANCH_SCHEDULE_VARIATIONS[branch.id] || [0, 1, 2, 5]; // Default selection
+      BRANCH_SCHEDULE_VARIATIONS[branch.id] ||
+      schedulePresets[Math.abs(hash) % schedulePresets.length];
 
     for (let dayOffset = 0; dayOffset <= totalDays; dayOffset++) {
       const currentDate = addDays(beginDate, dayOffset);
@@ -209,6 +236,10 @@ export function generateEventsForBranches(
 
           const eventId = `${branch.id}-${tmpl.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${currentDate.toISOString().slice(0, 10)}`;
 
+          const eventUrl =
+            branch.website ||
+            `https://www.google.com/search?q=${encodeURIComponent(`${branch.name} ${branch.city} ${branch.state} library storytime`)}`;
+
           events.push({
             id: eventId,
             systemId: branch.systemId,
@@ -225,7 +256,7 @@ export function generateEventsForBranches(
             ageRangeText,
             eventType,
             roomOrLocation: tmpl.room,
-            url: branch.website,
+            url: eventUrl,
             isRegistrationRequired: tmpl.registrationRequired || isRegistrationRequired,
           });
         }
