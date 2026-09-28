@@ -1,6 +1,5 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
-import { LIBRARY_BRANCHES } from './libraries-data';
-import { getBranchesByIds, getBranchById, loadAllLibraries } from './imls-db';
+import { getBranchesByIds, loadAllLibraries } from './imls-db';
 import { classifyEvent } from './classifier';
 import { addDays, setHours, setMinutes } from 'date-fns';
 
@@ -60,115 +59,84 @@ const WEEKLY_PROGRAM_TEMPLATES: ProgramTemplate[] = [
     startHour: 10,
     startMinute: 0,
     durationMinutes: 60,
-    room: "Children's Play Corner",
-  },
-  {
-    title: 'Saturday Family Storytime & Crafts',
-    description: 'Stories, songs, and laughter for the whole family! Bring the kids, grandparents, and siblings for a joyful weekend storytime followed by a hands-on craft activity.',
-    dayOfWeek: 6, // Saturday
-    startHour: 10,
-    startMinute: 30,
-    durationMinutes: 45,
     room: "Children's Room",
   },
   {
+    title: 'Family Weekend Story & Craft',
+    description: 'A joyful weekend story hour for the whole family! Features engaging stories, lively sing-alongs, and an easy hands-on craft activity for all ages.',
+    dayOfWeek: 6, // Saturday
+    startHour: 11,
+    startMinute: 0,
+    durationMinutes: 50,
+    room: 'Community Room',
+  },
+  {
+    title: 'Bilingual Storytime / Cuentos Bilingües',
+    description: 'Stories, songs, and rhymes presented in English and Spanish to celebrate language and culture. Perfect for bilingual families or children learning a new language.',
+    dayOfWeek: 2, // Tuesday
+    startHour: 11,
+    startMinute: 15,
+    durationMinutes: 40,
+    room: "Children's Story Room",
+  },
+  {
+    title: 'Baby Sign & Sing',
+    description: 'Learn basic sign language signs for everyday communication with your baby through fun songs, rhymes, and stories.',
+    dayOfWeek: 4, // Thursday
+    startHour: 11,
+    startMinute: 15,
+    durationMinutes: 30,
+    room: "Children's Story Room",
+  },
+  {
     title: 'Little Builders: STEM & Lego Club',
-    description: 'Hands-on building fun for kindergarten and elementary kids. Build engineering challenges, test bridges, or build your own magnificent Lego creations.',
+    description: 'Free build and challenge prompts with mega bloks, Duplo, and standard Legos. Encourages spatial reasoning, fine motor skills, and creative collaboration.',
     dayOfWeek: 3, // Wednesday
     startHour: 15,
     startMinute: 30,
     durationMinutes: 60,
-    room: 'Community Room',
-    registrationRequired: true,
+    room: 'Activity Room',
   },
   {
-    title: 'Pajama Storytime & Bedtime Tales',
-    description: 'Put on your favorite cozy pajamas and bring a stuffed animal friend for calm, relaxing bedtime stories and soft lullabies before sleep.',
-    dayOfWeek: 4, // Thursday
+    title: 'Twilight Bedtime Pajama Storytime',
+    description: 'Wear your cozy pajamas and bring your favorite stuffed animal! We wind down the day with calming bedtime stories, gentle lullabies, and soothing songs.',
+    dayOfWeek: 4, // Thursday evening
     startHour: 18,
     startMinute: 30,
     durationMinutes: 35,
-    room: 'Story Corner',
+    room: "Children's Room",
   },
   {
-    title: 'Bilingual Storytime / Cuentos Bilingües',
-    description: 'Songs, rhymes, and picture books in Spanish and English for families and young children. Un tiempo interactivo para toda la familia.',
+    title: 'Sensory-Friendly Calm Storytime',
+    description: 'A welcoming, supportive environment with dimmed lights, fidget toys, visual schedules, and sensory-friendly storytelling designed for neurodivergent children.',
+    dayOfWeek: 6, // Saturday
+    startHour: 10,
+    startMinute: 0,
+    durationMinutes: 40,
+    room: 'Quiet Study / Meeting Room',
+    registrationRequired: true,
+  },
+  {
+    title: 'Nature & Garden Storytime',
+    description: 'Stories about animals, plants, and the seasons followed by a quick outdoor nature exploration or seedling planting on the library patio.',
     dayOfWeek: 5, // Friday
     startHour: 11,
     startMinute: 0,
-    durationMinutes: 40,
+    durationMinutes: 45,
     room: 'Patio / Community Room',
   },
 ];
 
-// Branch-specific program variations
-const BRANCH_SCHEDULE_VARIATIONS: Record<string, number[]> = {
-  // Pasadena Public Library
-  'ppl-jefferson': [0, 1, 2, 3, 4, 5, 6, 7], // Flagship children's branch
-  'ppl-hastings': [0, 1, 2, 5],
-  'ppl-allendale': [1, 2, 5],
-  'ppl-hill-ave': [0, 1, 5, 7],
-  'ppl-lamanda-park': [1, 3, 5],
-  'ppl-la-pintoresca': [1, 4, 8],
-  'ppl-santa-catalina': [0, 1, 6],
-  'ppl-san-rafael': [2, 5],
-  'ppl-linda-vista': [1, 2],
-
-  // South Pasadena Public Library
-  'sppl-main': [0, 1, 2, 3, 4, 5],
-
-  // Altadena Library District
-  'ald-main': [0, 1, 2, 4, 5],
-  'ald-bob-lucas': [1, 2, 8],
-
-  // Crowell San Marino
-  'crowell-main': [0, 1, 2, 6],
-
-  // Alhambra
-  'alhambra-main': [0, 1, 3, 5],
-
-  // Glendale
-  'glac-central': [0, 1, 2, 3, 5, 6],
-  'glac-brand': [2, 5],
-  'glac-adams-square': [1, 2],
-  'glac-montrose': [0, 1, 5],
-
-  // LA County
-  'lacounty-san-gabriel': [1, 2, 5],
-  'lacounty-temple-city': [0, 1, 5],
-  'lacounty-rosemead': [1, 4, 8],
-  'lacounty-la-canada': [0, 1, 2, 5],
-
-  // LAPL Nearby
-  'lapl-eagle-rock': [0, 1, 2, 5],
-  'lapl-arroyo-seco': [0, 1, 3, 5],
-  'lapl-chinatown': [1, 2],
-  'lapl-lincoln-heights': [1, 8],
-  'lapl-central': [0, 1, 2, 5],
-  'lapl-venice': [0, 1, 5],
-
-  // Seattle
-  'spl-ballard': [0, 1, 2, 4, 5],
-  'spl-queen-anne': [0, 1, 5, 7],
-  'spl-central': [0, 1, 2, 3, 4, 5, 6],
-  'spl-fremont': [1, 2, 5],
-  'spl-greenwood': [0, 1, 3, 5],
-  'kcls-bellevue': [0, 1, 2, 3, 4, 5, 6, 7],
-  'kcls-kirkland': [0, 1, 2, 5],
-  'kcls-redmond': [0, 1, 3, 5, 6],
-
-  // New York
-  'nypl-schwarzman': [0, 1, 2, 5],
-  'nypl-snfl': [0, 1, 2, 3, 5, 7],
-  'bpl-central': [0, 1, 2, 3, 4, 5, 6],
-  'bpl-park-slope': [0, 1, 3, 5],
-
-  // SF & Others
-  'sfpl-main': [0, 1, 2, 3, 5],
-  'sfpl-mission': [0, 1, 2, 5],
-  'cpl-lincoln-park': [0, 1, 3, 5],
-  'apl-central': [0, 1, 2, 3, 5, 6],
-};
+// Rotating weekly program schedule presets
+const SCHEDULE_PRESETS: number[][] = [
+  [0, 1, 2, 5],       // Tue Baby, Wed Toddler, Thu Preschool, Sat Family
+  [1, 2, 4, 6],       // Mon Movers, Tue Baby, Thu Preschool, Sat Family
+  [0, 2, 3, 5],       // Tue Baby, Thu Preschool, Wed Toddler, Sat Family
+  [1, 3, 5, 7],       // Mon Movers, Wed Toddler, Sat Family, Thu Baby Sign
+  [0, 1, 5, 8],       // Tue Baby, Wed Toddler, Sat Family, Wed STEM
+  [2, 4, 5, 6, 9],    // Thu Preschool, Fri Stay & Play, Sat Family, Thu Pajama
+  [0, 1, 2, 3, 5, 6], // Flagship full schedule
+];
 
 export function generateEventsForBranches(
   branchIds: string[],
@@ -183,40 +151,19 @@ export function generateEventsForBranches(
   const beginDate = addDays(startDay, -7);
   const totalDays = daysAhead + 7;
 
-  // Selected branches or all branches
-  let branches: LibraryBranch[] = [];
-  if (branchIds.length > 0) {
-    branches = getBranchesByIds(branchIds);
-    // If any IDs are from legacy static list, merge them
-    if (branches.length < branchIds.length) {
-      const foundIds = new Set(branches.map((b) => b.id));
-      const missingIds = branchIds.filter((id) => !foundIds.has(id));
-      const legacyBranches = LIBRARY_BRANCHES.filter((b) => missingIds.includes(b.id));
-      branches.push(...legacyBranches);
-    }
-  } else {
-    branches = loadAllLibraries().slice(0, 10);
-  }
-
-  const schedulePresets = [
-    [0, 1, 2, 5],
-    [1, 2, 4, 6],
-    [0, 2, 3, 5],
-    [1, 3, 5, 7],
-    [0, 1, 5, 8],
-    [2, 4, 5, 6],
-  ];
+  // Selected branches or all branches directly from the IMLS database
+  const branches: LibraryBranch[] = branchIds.length > 0
+    ? getBranchesByIds(branchIds)
+    : loadAllLibraries().slice(0, 10);
 
   for (const branch of branches) {
-    // Deterministic distribution per branch
+    // Generate deterministic schedule variation derived from branch ID hash
     let hash = 0;
     for (let i = 0; i < branch.id.length; i++) {
       hash = (hash << 5) - hash + branch.id.charCodeAt(i);
       hash |= 0;
     }
-    const templateIndices =
-      BRANCH_SCHEDULE_VARIATIONS[branch.id] ||
-      schedulePresets[Math.abs(hash) % schedulePresets.length];
+    const templateIndices = SCHEDULE_PRESETS[Math.abs(hash) % SCHEDULE_PRESETS.length];
 
     for (let dayOffset = 0; dayOffset <= totalDays; dayOffset++) {
       const currentDate = addDays(beginDate, dayOffset);

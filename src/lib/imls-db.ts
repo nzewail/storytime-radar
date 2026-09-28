@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { LibraryBranch, LibrarySystem } from '@/types';
+import { LibraryBranch, LibrarySystem, LocationCoordinates } from '@/types';
 import { calculateDistanceMiles } from './geo';
 
 interface RawIMLSRecord {
@@ -18,8 +18,20 @@ interface RawIMLSRecord {
   fscsKey: string;
 }
 
+export interface AutocompleteLocation {
+  title: string;
+  subtitle: string;
+  city: string;
+  state: string;
+  lat: number;
+  lon: number;
+  query: string;
+}
+
 let cachedLibraries: LibraryBranch[] | null = null;
 let libraryByIdMap: Map<string, LibraryBranch> | null = null;
+let cityIndex: Map<string, AutocompleteLocation> | null = null;
+let zipIndex: Map<string, AutocompleteLocation> | null = null;
 
 // Curated colors for prominent systems, fallback to deterministic hash for all others
 const KNOWN_SYSTEM_COLORS: Record<string, string> = {
@@ -65,9 +77,9 @@ function generateSystemColor(seed: string): string {
   return PALETTE[index];
 }
 
-export function loadAllLibraries(): LibraryBranch[] {
-  if (cachedLibraries && libraryByIdMap) {
-    return cachedLibraries;
+function ensureLoaded() {
+  if (cachedLibraries && libraryByIdMap && cityIndex && zipIndex) {
+    return;
   }
 
   const filePath = path.join(process.cwd(), 'data', 'us_public_libraries.json');
@@ -77,6 +89,8 @@ export function loadAllLibraries(): LibraryBranch[] {
 
     const map = new Map<string, LibraryBranch>();
     const branches: LibraryBranch[] = [];
+    const cities = new Map<string, AutocompleteLocation>();
+    const zips = new Map<string, AutocompleteLocation>();
 
     for (const r of records) {
       const lowerName = r.name.toLowerCase();
@@ -110,28 +124,61 @@ export function loadAllLibraries(): LibraryBranch[] {
 
       map.set(r.id, branch);
       branches.push(branch);
+
+      // Index city
+      const cityKey = `${r.city}, ${r.state}`.toLowerCase();
+      const isMain = lowerName.includes('central') || lowerName.includes('main');
+      if (!cities.has(cityKey) || isMain) {
+        cities.set(cityKey, {
+          title: `${r.city}, ${r.state}`,
+          subtitle: r.systemName,
+          city: r.city,
+          state: r.state,
+          lat: r.lat,
+          lon: r.lon,
+          query: `${r.city}, ${r.state}`,
+        });
+      }
+
+      // Index ZIP
+      if (r.zip && !zips.has(r.zip)) {
+        zips.set(r.zip, {
+          title: r.zip,
+          subtitle: `${r.city}, ${r.state} • ${r.systemName}`,
+          city: r.city,
+          state: r.state,
+          lat: r.lat,
+          lon: r.lon,
+          query: r.zip,
+        });
+      }
     }
 
     cachedLibraries = branches;
     libraryByIdMap = map;
-    return branches;
+    cityIndex = cities;
+    zipIndex = zips;
   } catch (err) {
     console.error('Failed to load us_public_libraries.json:', err);
-    return [];
+    cachedLibraries = [];
+    libraryByIdMap = new Map();
+    cityIndex = new Map();
+    zipIndex = new Map();
   }
 }
 
+export function loadAllLibraries(): LibraryBranch[] {
+  ensureLoaded();
+  return cachedLibraries || [];
+}
+
 export function getBranchById(id: string): LibraryBranch | undefined {
-  if (!libraryByIdMap) {
-    loadAllLibraries();
-  }
+  ensureLoaded();
   return libraryByIdMap?.get(id);
 }
 
 export function getBranchesByIds(ids: string[]): LibraryBranch[] {
-  if (!libraryByIdMap) {
-    loadAllLibraries();
-  }
+  ensureLoaded();
   const idSet = new Set(ids);
   const branches: LibraryBranch[] = [];
   for (const id of idSet) {
@@ -141,6 +188,110 @@ export function getBranchesByIds(ids: string[]): LibraryBranch[] {
     }
   }
   return branches;
+}
+
+/**
+ * Autocomplete search across all 13,400+ cities and 15,300+ ZIP codes
+ * with public libraries in the federal IMLS database.
+ */
+export function searchLocations(query: string, limit: number = 6): AutocompleteLocation[] {
+  ensureLoaded();
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+
+  const isNumeric = /^\d+/.test(q);
+  const results: AutocompleteLocation[] = [];
+
+  if (isNumeric) {
+    if (zipIndex) {
+      for (const [z, item] of zipIndex) {
+        if (z.startsWith(q)) {
+          results.push(item);
+          if (results.length >= limit) break;
+        }
+      }
+    }
+  } else {
+    if (cityIndex) {
+      // 1. Starts with query (e.g. "Port Hur...")
+      for (const [key, item] of cityIndex) {
+        if (key.startsWith(q)) {
+          results.push(item);
+          if (results.length >= limit) break;
+        }
+      }
+
+      // 2. Contains query if still under limit
+      if (results.length < limit) {
+        for (const [key, item] of cityIndex) {
+          if (!key.startsWith(q) && key.includes(q)) {
+            results.push(item);
+            if (results.length >= limit) break;
+          }
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Resolves an exact city ("port huron, mi") or 5-digit ZIP ("48060")
+ * directly from the database.
+ */
+export function lookupLocation(query: string): LocationCoordinates | null {
+  ensureLoaded();
+  const q = query.trim().toLowerCase();
+
+  // 1. Check exact 5-digit ZIP code
+  if (/^\d{5}$/.test(q) && zipIndex) {
+    const item = zipIndex.get(q);
+    if (item) {
+      return {
+        lat: item.lat,
+        lon: item.lon,
+        displayName: `${item.city}, ${item.state} ${q}`,
+        city: item.city,
+        state: item.state,
+        zip: q,
+      };
+    }
+  }
+
+  // 2. Check exact city, state
+  if (cityIndex) {
+    const item = cityIndex.get(q);
+    if (item) {
+      return {
+        lat: item.lat,
+        lon: item.lon,
+        displayName: `${item.city}, ${item.state}`,
+        city: item.city,
+        state: item.state,
+      };
+    }
+
+    // Check city without state code if unique match exists
+    const candidates: AutocompleteLocation[] = [];
+    for (const [key, item] of cityIndex) {
+      if (item.city.toLowerCase() === q) {
+        candidates.push(item);
+      }
+    }
+    if (candidates.length === 1) {
+      const single = candidates[0];
+      return {
+        lat: single.lat,
+        lon: single.lon,
+        displayName: `${single.city}, ${single.state}`,
+        city: single.city,
+        state: single.state,
+      };
+    }
+  }
+
+  return null;
 }
 
 export interface RadiusSearchResult {
@@ -163,7 +314,7 @@ export function getLibrariesWithinRadius(
   // Bounding box pre-filtering for sub-millisecond spatial search:
   // 1 degree lat ~ 69 miles
   // 1 degree lon ~ 69 * cos(lat) miles
-  const safeRadius = Math.max(radiusMiles, 50); // Search bounding box with margin
+  const safeRadius = Math.max(radiusMiles, 50);
   const deltaLat = (safeRadius / 69) * 1.25;
   const cosLat = Math.cos((lat * Math.PI) / 180);
   const deltaLon = (safeRadius / (69 * Math.max(cosLat, 0.1))) * 1.25;
@@ -173,13 +324,11 @@ export function getLibrariesWithinRadius(
   const minLon = lon - deltaLon;
   const maxLon = lon + deltaLon;
 
-  // Filter candidates using fast bounding box
   const candidates: (LibraryBranch & { distanceMiles: number })[] = [];
   let closest: (LibraryBranch & { distanceMiles: number }) | null = null;
   let minDistance = Infinity;
 
   for (const b of all) {
-    // Quick bounding box check
     if (b.lat >= minLat && b.lat <= maxLat && b.lon >= minLon && b.lon <= maxLon) {
       const distance = calculateDistanceMiles(lat, lon, b.lat, b.lon);
       const branchWithDist = { ...b, distanceMiles: distance };
@@ -195,7 +344,7 @@ export function getLibrariesWithinRadius(
     }
   }
 
-  // If bounding box yielded no closest (e.g. very sparse remote area), find nearest across full DB
+  // If bounding box yielded no closest (remote area), find nearest across full DB
   if (!closest) {
     for (const b of all) {
       const distance = calculateDistanceMiles(lat, lon, b.lat, b.lon);
@@ -213,11 +362,9 @@ export function getLibrariesWithinRadius(
   const systemMap = new Map<string, LibrarySystem>();
   for (const b of candidates) {
     if (!systemMap.has(b.systemId)) {
-      // Extract FSCS code from sysId e.g. "sys-ca0094" -> "CA0094"
       const fscsKey = b.systemId.replace('sys-', '').toUpperCase();
       const color = KNOWN_SYSTEM_COLORS[fscsKey] || generateSystemColor(b.systemId);
       const website = KNOWN_SYSTEM_WEBSITES[fscsKey] || `https://www.google.com/search?q=${encodeURIComponent(b.systemName)}`;
-      
       const providerType = (fscsKey === 'CA0094' || fscsKey === 'WA0064') ? 'trumba' : 'custom';
 
       systemMap.set(b.systemId, {
