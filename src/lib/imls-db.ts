@@ -37,8 +37,10 @@ let zipIndex: Map<string, AutocompleteLocation> | null = null;
 const KNOWN_SYSTEM_COLORS: Record<string, string> = {
   'CA0094': '#e11d48', // Pasadena: Rose
   'WA0064': '#0284c7', // Seattle: Sky Blue
-  'CA0075': '#0891b2', // LAPL: Cyan
-  'CA0076': '#4f46e5', // LA County: Indigo
+  'CA0063': '#0891b2', // LAPL: Cyan
+  'CA0075': '#0891b2', // LAPL legacy
+  'CA0062': '#4f46e5', // LA County: Indigo
+  'CA0076': '#4f46e5', // LA County legacy
   'CA0168': '#059669', // SFPL: Emerald
   'IL0091': '#ea580c', // Chicago: Orange
   'TX0037': '#d97706', // Austin: Amber
@@ -51,14 +53,16 @@ const KNOWN_SYSTEM_COLORS: Record<string, string> = {
 const KNOWN_SYSTEM_WEBSITES: Record<string, string> = {
   'CA0094': 'https://www.cityofpasadena.net/library/',
   'WA0064': 'https://www.spl.org',
+  'CA0063': 'https://www.lapl.org',
   'CA0075': 'https://www.lapl.org',
+  'CA0062': 'https://lacountylibrary.org',
   'CA0076': 'https://lacountylibrary.org',
   'CA0168': 'https://sfpl.org',
   'IL0091': 'https://www.chipublib.org',
   'TX0037': 'https://library.austintexas.gov',
   'CO0026': 'https://www.denverlibrary.org',
   'MA0034': 'https://www.bpl.org',
-  'MI0321': 'https://sccl.lib.mi.us',
+  'MI0321': 'https://stclaircountylibrary.org',
 };
 
 // Deterministic pleasing color palette generator for any library system in America

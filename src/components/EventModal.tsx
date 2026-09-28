@@ -71,13 +71,26 @@ export default function EventModal({ event, onClose }: EventModalProps) {
         <div className="p-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${ageInfo.badgeBg} ${ageInfo.badgeText} ${ageInfo.badgeBorder} dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-900`}
-              >
-                <span>{ageInfo.icon}</span>
-                <span>{ageInfo.label}</span>
-                <span className="opacity-75 font-normal">({event.ageRangeText})</span>
-              </span>
+              {(event.targetAges && event.targetAges.length > 0 && event.targetAges.length <= 2
+                ? event.targetAges
+                : [event.ageGroup]
+              ).map((ag) => {
+                const agInfo = AGE_CATEGORIES[ag] || AGE_CATEGORIES['all-ages'];
+                return (
+                  <span
+                    key={ag}
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${agInfo.badgeBg} ${agInfo.badgeText} ${agInfo.badgeBorder} dark:bg-slate-800 dark:border-slate-700`}
+                  >
+                    <span>{agInfo.icon}</span>
+                    <span>{agInfo.label}</span>
+                  </span>
+                );
+              })}
+              {event.ageRangeText && (
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  ({event.ageRangeText})
+                </span>
+              )}
 
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                 <span>{typeInfo.icon}</span>
@@ -133,7 +146,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                 </p>
               )}
 
-              <div className="mt-2 flex items-center gap-3">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
                 <a
                   href={mapsUrl}
                   target="_blank"
@@ -144,14 +157,14 @@ export default function EventModal({ event, onClose }: EventModalProps) {
                   <span>Google Maps Directions</span>
                 </a>
 
-                {event.url && (
+                {(event.branchUrl || event.url) && (
                   <a
-                    href={event.url}
+                    href={event.branchUrl || event.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                   >
-                    <span>Library Website</span>
+                    <span>Branch Library Website</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}

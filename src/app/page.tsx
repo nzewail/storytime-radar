@@ -39,6 +39,7 @@ export default function Home() {
 
   const [viewMode, setViewMode] = useState<'agenda' | 'month'>('agenda');
   const [events, setEvents] = useState<StorytimeEvent[]>([]);
+  const [unsupportedBranches, setUnsupportedBranches] = useState<LibraryBranch[]>([]);
 
   // Modals
   const [selectedEvent, setSelectedEvent] = useState<StorytimeEvent | null>(null);
@@ -78,6 +79,7 @@ export default function Home() {
     async function fetchEvents() {
       if (selectedBranchIds.length === 0) {
         setEvents([]);
+        setUnsupportedBranches([]);
         return;
       }
 
@@ -87,6 +89,7 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           setEvents(data.events || []);
+          setUnsupportedBranches(data.unsupportedBranches || []);
         }
       } catch (err) {
         console.error('Failed to fetch events:', err);
@@ -203,8 +206,11 @@ export default function Home() {
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
       // Age filter
-      if (selectedAges.length > 0 && !selectedAges.includes(ev.ageGroup)) {
-        return false;
+      if (selectedAges.length > 0) {
+        const eventAges = ev.targetAges && ev.targetAges.length > 0 ? ev.targetAges : [ev.ageGroup];
+        if (!selectedAges.some((a) => eventAges.includes(a))) {
+          return false;
+        }
       }
 
       // Event Type filter
@@ -288,6 +294,42 @@ export default function Home() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Unsupported branches alert */}
+        {unsupportedBranches.length > 0 && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3.5 text-sm">
+            <span className="text-xl shrink-0">⚠️</span>
+            <div className="flex-1">
+              <h4 className="font-semibold text-amber-900 dark:text-amber-200">
+                {unsupportedBranches.length === 1
+                  ? `Live calendar feed unavailable for ${unsupportedBranches[0].name}`
+                  : `Live calendar feed unavailable for ${unsupportedBranches.length} selected libraries`}
+              </h4>
+              <p className="mt-1 text-amber-800/90 dark:text-amber-300/80 leading-relaxed text-xs sm:text-sm">
+                We couldn't retrieve a live calendar feed for{' '}
+                <span className="font-medium">
+                  {unsupportedBranches.slice(0, 3).map((b) => b.name).join(', ')}
+                  {unsupportedBranches.length > 3 ? ` and ${unsupportedBranches.length - 3} more` : ''}
+                </span>
+                . We only display verified real events — check their official website for storytime schedules.
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {unsupportedBranches.slice(0, 4).map((b) => (
+                  <a
+                    key={b.id}
+                    href={b.website || `https://www.google.com/search?q=${encodeURIComponent(`${b.name} ${b.city} library storytime`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-900 text-amber-900 dark:text-amber-200 transition-colors"
+                  >
+                    <span>{b.name} Website</span>
+                    <span className="text-[10px]">↗</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {viewMode === 'agenda' ? (
           <AgendaView
             events={filteredEvents}
