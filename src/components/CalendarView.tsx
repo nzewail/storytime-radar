@@ -24,6 +24,7 @@ import {
   subMonths,
   parseISO,
 } from 'date-fns';
+import { formatEventTime, getEventDayKey } from '@/lib/calendar/timezone';
 
 interface CalendarViewProps {
   events: StorytimeEvent[];
@@ -44,9 +45,9 @@ export default function CalendarView({ events, onSelectEvent }: CalendarViewProp
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const goToToday = () => setCurrentMonth(new Date());
 
-  // Map events to local date keys "YYYY-MM-DD"
+  // Map events to date keys "YYYY-MM-DD" in event's local timezone
   const eventsByDay = events.reduce((acc, ev) => {
-    const dayKey = format(parseISO(ev.startTime), 'yyyy-MM-dd');
+    const dayKey = getEventDayKey(ev.startTime, ev.timezone);
     if (!acc[dayKey]) {
       acc[dayKey] = [];
     }
@@ -152,10 +153,10 @@ export default function CalendarView({ events, onSelectEvent }: CalendarViewProp
                       type="button"
                       onClick={() => onSelectEvent(ev)}
                       className={`w-full text-left p-1 rounded-md text-[11px] font-medium leading-tight truncate flex items-center gap-1 border transition-all hover:scale-[1.02] active:scale-[0.98] ${ageInfo.badgeBg} ${ageInfo.badgeText} ${ageInfo.badgeBorder} dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-900`}
-                      title={`${format(startTime, 'h:mm a')} - ${ev.title} (${ev.branchName})`}
+                      title={`${formatEventTime(ev.startTime, ev.timezone)} - ${ev.title} (${ev.branchName})`}
                     >
                       <span className="text-xs shrink-0">{ageInfo.icon}</span>
-                      <span className="font-bold shrink-0">{format(startTime, 'h:mma')}</span>
+                      <span className="font-bold shrink-0">{formatEventTime(ev.startTime, ev.timezone)}</span>
                       <span className="truncate">{ev.title}</span>
                     </button>
                   );

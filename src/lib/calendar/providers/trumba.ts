@@ -1,7 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
-import { parseLocalDateTimeToIso } from '../timezone';
+import { parseLocalDateTimeToIso, getTimezoneForState } from '../timezone';
 
 function decodeHtmlEntities(str: string): string {
   return str
@@ -137,6 +137,7 @@ export async function fetchTrumbaEvents(
       roomOrLocation: rawLocation || matchedBranch.name,
       url: eventUrl,
       isRegistrationRequired,
+      timezone: getTimezoneForState(matchedBranch.state),
     });
   }
 

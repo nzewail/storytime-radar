@@ -234,3 +234,68 @@ export function combineDateAndTimeToIso(
     return { startTime: fallback, endTime: fallback };
   }
 }
+
+/**
+ * Formats an event's ISO time string (e.g. "10:30 AM") in the library's physical timezone.
+ */
+export function formatEventTime(isoString: string, timeZone?: string): string {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timeZone || 'America/Los_Angeles',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(d);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Formats an event's ISO date string (e.g. "Monday, September 28, 2026") in the library's physical timezone.
+ */
+export function formatEventDate(
+  isoString: string,
+  timeZone?: string,
+  style: 'short' | 'medium' | 'full' = 'full'
+): string {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '';
+    if (style === 'full') {
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: timeZone || 'America/Los_Angeles',
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(d);
+    }
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timeZone || 'America/Los_Angeles',
+      dateStyle: style,
+    }).format(d);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Computes the calendar day key "YYYY-MM-DD" in the library's physical timezone.
+ */
+export function getEventDayKey(isoString: string, timeZone?: string): string {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString.slice(0, 10);
+    // en-CA locale formats as YYYY-MM-DD
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: timeZone || 'America/Los_Angeles',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  } catch {
+    return isoString.slice(0, 10);
+  }
+}
