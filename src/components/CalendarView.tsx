@@ -44,9 +44,9 @@ export default function CalendarView({ events, onSelectEvent }: CalendarViewProp
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const goToToday = () => setCurrentMonth(new Date());
 
-  // Map events to date keys "YYYY-MM-DD"
+  // Map events to local date keys "YYYY-MM-DD"
   const eventsByDay = events.reduce((acc, ev) => {
-    const dayKey = ev.startTime.slice(0, 10);
+    const dayKey = format(parseISO(ev.startTime), 'yyyy-MM-dd');
     if (!acc[dayKey]) {
       acc[dayKey] = [];
     }

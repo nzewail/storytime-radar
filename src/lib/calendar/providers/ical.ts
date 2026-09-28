@@ -1,20 +1,34 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
+import { parseLocalDateTimeToIso } from '../timezone';
 
-function parseIcalDate(val: string): Date {
-  // Support YYYYMMDDTHHMMSSZ or YYYYMMDDTHHMMSS
+function parseIcalDate(val: string, branchState?: string): string {
+  if (val.trim().endsWith('Z')) {
+    const cleaned = val.replace(/[^0-9T]/g, '');
+    if (cleaned.length >= 15) {
+      const year = parseInt(cleaned.slice(0, 4), 10);
+      const month = parseInt(cleaned.slice(4, 6), 10) - 1;
+      const day = parseInt(cleaned.slice(6, 8), 10);
+      const hour = parseInt(cleaned.slice(9, 11), 10);
+      const min = parseInt(cleaned.slice(11, 13), 10);
+      const sec = parseInt(cleaned.slice(13, 15), 10);
+      return new Date(Date.UTC(year, month, day, hour, min, sec)).toISOString();
+    }
+  }
+
   const cleaned = val.replace(/[^0-9T]/g, '');
   if (cleaned.length >= 15) {
-    const year = parseInt(cleaned.slice(0, 4), 10);
-    const month = parseInt(cleaned.slice(4, 6), 10) - 1;
-    const day = parseInt(cleaned.slice(6, 8), 10);
-    const hour = parseInt(cleaned.slice(9, 11), 10);
-    const min = parseInt(cleaned.slice(11, 13), 10);
-    const sec = parseInt(cleaned.slice(13, 15), 10);
-    return new Date(Date.UTC(year, month, day, hour, min, sec));
+    const yyyy = cleaned.slice(0, 4);
+    const mm = cleaned.slice(4, 6);
+    const dd = cleaned.slice(6, 8);
+    const hh = cleaned.slice(9, 11);
+    const min = cleaned.slice(11, 13);
+    const sec = cleaned.slice(13, 15);
+    return parseLocalDateTimeToIso(`${yyyy}-${mm}-${dd}T${hh}:${min}:${sec}`, { state: branchState });
   }
-  return new Date(val);
+
+  return parseLocalDateTimeToIso(val, { state: branchState });
 }
 
 /**
@@ -70,8 +84,8 @@ export async function fetchIcalEvents(
       if (!branch) continue;
 
       const classification = classifyEvent(title, desc);
-      const startTime = dtstartMatch ? parseIcalDate(dtstartMatch[1].trim()).toISOString() : new Date().toISOString();
-      const endTime = dtendMatch ? parseIcalDate(dtendMatch[1].trim()).toISOString() : new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
+      const startTime = dtstartMatch ? parseIcalDate(dtstartMatch[1].trim(), branch.state) : new Date().toISOString();
+      const endTime = dtendMatch ? parseIcalDate(dtendMatch[1].trim(), branch.state) : new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
 
       events.push({
         id: `ical-${uid}`,
