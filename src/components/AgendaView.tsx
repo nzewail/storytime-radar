@@ -194,14 +194,27 @@ export default function AgendaView({
                         onClick={() => onSelectEvent(event)}
                       >
                         <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                          {/* Age tag */}
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${ageInfo.badgeBg} ${ageInfo.badgeText} ${ageInfo.badgeBorder} dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-900`}
-                          >
-                            <span>{ageInfo.icon}</span>
-                            <span>{ageInfo.label}</span>
-                            <span className="opacity-75 font-normal">({event.ageRangeText})</span>
-                          </span>
+                          {/* Age tag(s) */}
+                          {(event.targetAges && event.targetAges.length > 0 && event.targetAges.length <= 2
+                            ? event.targetAges
+                            : [event.ageGroup]
+                          ).map((ag) => {
+                            const agInfo = AGE_CATEGORIES[ag] || AGE_CATEGORIES['all-ages'];
+                            return (
+                              <span
+                                key={ag}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${agInfo.badgeBg} ${agInfo.badgeText} ${agInfo.badgeBorder} dark:bg-slate-800 dark:border-slate-700`}
+                              >
+                                <span>{agInfo.icon}</span>
+                                <span>{agInfo.label}</span>
+                              </span>
+                            );
+                          })}
+                          {event.ageRangeText && (
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                              ({event.ageRangeText})
+                            </span>
+                          )}
 
                           {/* Type tag */}
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
@@ -232,7 +245,20 @@ export default function AgendaView({
 
                           <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
                             <MapPin className="w-3.5 h-3.5 text-indigo-500" />
-                            <span className="font-medium text-slate-800 dark:text-slate-200">{event.branchName}</span>
+                            {event.branchUrl ? (
+                              <a
+                                href={event.branchUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="font-medium text-slate-800 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 underline decoration-slate-300 dark:decoration-slate-700 underline-offset-2"
+                                title={`Visit ${event.branchName} website`}
+                              >
+                                {event.branchName}
+                              </a>
+                            ) : (
+                              <span className="font-medium text-slate-800 dark:text-slate-200">{event.branchName}</span>
+                            )}
                             {event.roomOrLocation && (
                               <span className="text-slate-400 dark:text-slate-500">({event.roomOrLocation})</span>
                             )}

@@ -48,11 +48,13 @@ export interface StorytimeEvent {
   branchName: string;
   branchAddress: string;
   branchCity?: string;
+  branchUrl?: string;
   title: string;
   description: string;
   startTime: string; // ISO string
   endTime: string;   // ISO string
   ageGroup: AgeGroup;
+  targetAges: AgeGroup[];
   ageRangeText?: string;
   eventType: EventType;
   roomOrLocation?: string;
