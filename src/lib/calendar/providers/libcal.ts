@@ -1,54 +1,10 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
+import { combineDateAndTimeToIso } from '../timezone';
 
 const libcalCache = new Map<string, { timestamp: number; events: StorytimeEvent[] }>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
-
-function parseDateAndTime(dateStr: string, timeStr: string): { startTime: string; endTime: string } {
-  try {
-    const dateObj = new Date(dateStr);
-    if (isNaN(dateObj.getTime())) {
-      const now = new Date().toISOString();
-      return { startTime: now, endTime: now };
-    }
-
-    const firstTimePart = timeStr.split('-')[0].trim();
-    const secondTimePart = timeStr.includes('-') ? timeStr.split('-')[1].trim() : null;
-
-    const parseTime = (t: string) => {
-      const match = t.match(/(\d+):?(\d+)?\s*(am|pm)/i);
-      if (!match) return { hour: 10, minute: 0 };
-      let h = parseInt(match[1], 10);
-      const m = match[2] ? parseInt(match[2], 10) : 0;
-      const isPm = match[3].toLowerCase() === 'pm';
-      if (isPm && h < 12) h += 12;
-      if (!isPm && h === 12) h = 0;
-      return { hour: h, minute: m };
-    };
-
-    const startH = parseTime(firstTimePart);
-    const start = new Date(dateObj);
-    start.setHours(startH.hour, startH.minute, 0, 0);
-
-    let end: Date;
-    if (secondTimePart) {
-      const endH = parseTime(secondTimePart);
-      end = new Date(dateObj);
-      end.setHours(endH.hour, endH.minute, 0, 0);
-    } else {
-      end = new Date(start.getTime() + 45 * 60000);
-    }
-
-    return {
-      startTime: start.toISOString(),
-      endTime: end.toISOString(),
-    };
-  } catch {
-    const fallback = new Date().toISOString();
-    return { startTime: fallback, endTime: fallback };
-  }
-}
 
 /**
  * Generic LibCal Calendar Provider.
@@ -133,7 +89,9 @@ export async function fetchLibCalEvents(
       if (!matchedBranch) continue;
 
       const classification = classifyEvent(title, desc);
-      const { startTime, endTime } = parseDateAndTime(dateStr, timeStr);
+      const { startTime, endTime } = combineDateAndTimeToIso(dateStr, timeStr, {
+        state: matchedBranch.state,
+      });
 
       events.push({
         id: `libcal-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${dateStr.replace(/[^a-z0-9]/g, '-')}`,

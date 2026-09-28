@@ -1,6 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
+import { combineDateAndTimeToIso } from '../timezone';
 
 const drupalCache = new Map<string, { timestamp: number; events: StorytimeEvent[] }>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -53,44 +54,6 @@ async function getDrupalFormConfig(eventsSearchUrl: string): Promise<DrupalFormC
 
   drupalConfigCache = { branchMap, audienceIds };
   return drupalConfigCache;
-}
-
-function parseDateTime(dateStr: string, timeStr: string): { startTime: string; endTime: string } {
-  try {
-    const [month, day, year] = dateStr.split('/').map((s) => parseInt(s, 10));
-    const firstTimePart = timeStr.split('-')[0].trim();
-    const secondTimePart = timeStr.includes('-') ? timeStr.split('-')[1].trim() : null;
-
-    const parseTime = (t: string) => {
-      const match = t.match(/(\d+):?(\d+)?\s*(am|pm)/i);
-      if (!match) return { hour: 10, minute: 0 };
-      let h = parseInt(match[1], 10);
-      const m = match[2] ? parseInt(match[2], 10) : 0;
-      const isPm = match[3].toLowerCase() === 'pm';
-      if (isPm && h < 12) h += 12;
-      if (!isPm && h === 12) h = 0;
-      return { hour: h, minute: m };
-    };
-
-    const startH = parseTime(firstTimePart);
-    const start = new Date(year, month - 1, day, startH.hour, startH.minute);
-
-    let end: Date;
-    if (secondTimePart) {
-      const endH = parseTime(secondTimePart);
-      end = new Date(year, month - 1, day, endH.hour, endH.minute);
-    } else {
-      end = new Date(start.getTime() + 45 * 60000);
-    }
-
-    return {
-      startTime: start.toISOString(),
-      endTime: end.toISOString(),
-    };
-  } catch {
-    const fallback = new Date().toISOString();
-    return { startTime: fallback, endTime: fallback };
-  }
 }
 
 /**
@@ -214,7 +177,9 @@ export async function fetchDrupalEvents(
         if (!matchedBranch) continue;
 
         const classification = classifyEvent(rawTitle, rawDesc);
-        const { startTime, endTime } = parseDateTime(rawDate, rawTime);
+        const { startTime, endTime } = combineDateAndTimeToIso(rawDate, rawTime, {
+          state: matchedBranch.state,
+        });
 
         events.push({
           id: `drupal-${path.replace(/[^a-zA-Z0-9]/g, '-')}`,

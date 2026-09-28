@@ -1,0 +1,236 @@
+/**
+ * Universal Library Timezone Utilities
+ * Converts local wall-clock dates/times from library calendar systems
+ * into accurate UTC ISO strings, accounting for library state, coordinates,
+ * Daylight Saving Time, and vendor-provided offsets.
+ */
+
+export const STATE_TO_TIMEZONE: Record<string, string> = {
+  // Pacific
+  CA: 'America/Los_Angeles',
+  WA: 'America/Los_Angeles',
+  OR: 'America/Los_Angeles',
+  NV: 'America/Los_Angeles',
+  // Mountain
+  AZ: 'America/Phoenix',
+  CO: 'America/Denver',
+  UT: 'America/Denver',
+  NM: 'America/Denver',
+  WY: 'America/Denver',
+  MT: 'America/Denver',
+  ID: 'America/Boise',
+  // Central
+  IL: 'America/Chicago',
+  TX: 'America/Chicago',
+  MN: 'America/Chicago',
+  WI: 'America/Chicago',
+  MO: 'America/Chicago',
+  IA: 'America/Chicago',
+  KS: 'America/Chicago',
+  OK: 'America/Chicago',
+  AR: 'America/Chicago',
+  LA: 'America/Chicago',
+  MS: 'America/Chicago',
+  AL: 'America/Chicago',
+  ND: 'America/Chicago',
+  SD: 'America/Chicago',
+  NE: 'America/Chicago',
+  // Eastern
+  NY: 'America/New_York',
+  MI: 'America/Detroit',
+  OH: 'America/New_York',
+  PA: 'America/New_York',
+  FL: 'America/New_York',
+  GA: 'America/New_York',
+  NC: 'America/New_York',
+  SC: 'America/New_York',
+  VA: 'America/New_York',
+  WV: 'America/New_York',
+  MD: 'America/New_York',
+  DE: 'America/New_York',
+  NJ: 'America/New_York',
+  CT: 'America/New_York',
+  RI: 'America/New_York',
+  MA: 'America/New_York',
+  VT: 'America/New_York',
+  NH: 'America/New_York',
+  ME: 'America/New_York',
+  DC: 'America/New_York',
+  // Alaska & Hawaii
+  AK: 'America/Anchorage',
+  HI: 'Pacific/Honolulu',
+};
+
+/**
+ * Returns the IANA timezone for a given state abbreviation (defaults to 'America/Los_Angeles').
+ */
+export function getTimezoneForState(state?: string): string {
+  if (!state) return 'America/Los_Angeles';
+  return STATE_TO_TIMEZONE[state.trim().toUpperCase()] || 'America/Los_Angeles';
+}
+
+/**
+ * Normalizes offset strings such as "-0700" to "-07:00".
+ */
+export function formatOffset(offsetStr?: string): string {
+  if (!offsetStr) return '';
+  const cleaned = offsetStr.trim();
+  if (/^[+-]\d{4}$/.test(cleaned)) {
+    return `${cleaned.slice(0, 3)}:${cleaned.slice(3)}`;
+  }
+  if (/^[+-]\d{2}:\d{2}$/.test(cleaned)) {
+    return cleaned;
+  }
+  return '';
+}
+
+/**
+ * Accurately determines the GMT offset string (e.g. "-07:00" or "-08:00")
+ * for a specific calendar date and IANA timezone using standard Intl.DateTimeFormat.
+ */
+export function getTimezoneOffsetForDate(dateStr: string, timeZone: string): string {
+  try {
+    const datePart = dateStr.slice(0, 10);
+    // Use noon UTC to avoid edge-of-day DST shift artifacts
+    const ref = new Date(`${datePart}T12:00:00Z`);
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'longOffset',
+    });
+    const parts = dtf.formatToParts(ref);
+    const tzPart = parts.find((p) => p.type === 'timeZoneName')?.value;
+    if (tzPart && tzPart.startsWith('GMT')) {
+      return tzPart.replace('GMT', '');
+    }
+  } catch {
+    // Fallback if timezone invalid
+  }
+  return '-07:00';
+}
+
+/**
+ * Converts a local ISO/date-time string into an accurate UTC ISO string.
+ * Example inputs:
+ *  - "2026-09-28T10:30:00" with explicitOffset: "-0700" -> "2026-09-28T17:30:00.000Z"
+ *  - "2026-09-28 10:30:00" with state: "CA" -> "2026-09-28T17:30:00.000Z"
+ */
+export function parseLocalDateTimeToIso(
+  dateTimeStr: string,
+  options?: { explicitOffset?: string; state?: string; timeZone?: string }
+): string {
+  if (!dateTimeStr) return new Date().toISOString();
+
+  let clean = dateTimeStr.trim().replace(' ', 'T');
+
+  // If it already has an offset (e.g. +05:00, -07:00) or Z at the end, parse directly
+  if (/[+-]\d{2}:?\d{2}$|Z$/i.test(clean)) {
+    const parsed = new Date(clean);
+    return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+  }
+
+  // Ensure 2-digit hour: e.g. T9:30:00 -> T09:30:00
+  clean = clean.replace(/T(\d):/, (_, h) => `T0${h}:`);
+
+  // Ensure seconds exist
+  if (!clean.includes('T')) {
+    clean += 'T10:00:00';
+  } else if (/T\d{2}:\d{2}$/.test(clean)) {
+    clean += ':00';
+  }
+
+  // Determine timezone offset
+  let offset = formatOffset(options?.explicitOffset);
+  if (!offset) {
+    const tz =
+      options?.timeZone ||
+      (options?.state ? getTimezoneForState(options.state) : 'America/Los_Angeles');
+    offset = getTimezoneOffsetForDate(clean, tz);
+  }
+
+  const combined = `${clean}${offset}`;
+  const d = new Date(combined);
+  return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
+/**
+ * Combines separate dateStr and timeStr into an accurate UTC ISO string.
+ * Supports:
+ *  - dateStr: "09/28/2026", "2026-09-28", "September 28, 2026"
+ *  - timeStr: "10:30 am", "10:30am - 11:00am", "10:30:00"
+ */
+export function combineDateAndTimeToIso(
+  dateStr: string,
+  timeStr: string,
+  options?: { state?: string; timeZone?: string }
+): { startTime: string; endTime: string } {
+  try {
+    let year = new Date().getFullYear();
+    let month = 1;
+    let day = 1;
+
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/').map((s) => parseInt(s, 10));
+      if (parts.length === 3) {
+        month = parts[0];
+        day = parts[1];
+        year = parts[2] < 100 ? 2000 + parts[2] : parts[2];
+      }
+    } else if (dateStr.includes('-')) {
+      const parts = dateStr.split('-').map((s) => parseInt(s, 10));
+      if (parts.length === 3) {
+        year = parts[0];
+        month = parts[1];
+        day = parts[2];
+      }
+    } else {
+      const parsed = new Date(dateStr);
+      if (!isNaN(parsed.getTime())) {
+        year = parsed.getFullYear();
+        month = parsed.getMonth() + 1;
+        day = parsed.getDate();
+      }
+    }
+
+    const yyyy = String(year).padStart(4, '0');
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    const baseDate = `${yyyy}-${mm}-${dd}`;
+
+    const parseTime = (t: string) => {
+      const match = t.match(/(\d+):?(\d+)?\s*(am|pm)/i);
+      if (!match) return { hour: 10, minute: 0 };
+      let h = parseInt(match[1], 10);
+      const m = match[2] ? parseInt(match[2], 10) : 0;
+      const isPm = match[3].toLowerCase() === 'pm';
+      if (isPm && h < 12) h += 12;
+      if (!isPm && h === 12) h = 0;
+      return { hour: h, minute: m };
+    };
+
+    const firstTimePart = timeStr.split('-')[0].trim();
+    const secondTimePart = timeStr.includes('-') ? timeStr.split('-')[1].trim() : null;
+
+    const startH = parseTime(firstTimePart);
+    const startHourStr = String(startH.hour).padStart(2, '0');
+    const startMinStr = String(startH.minute).padStart(2, '0');
+    const startLocal = `${baseDate}T${startHourStr}:${startMinStr}:00`;
+
+    const startTime = parseLocalDateTimeToIso(startLocal, options);
+
+    let endTime: string;
+    if (secondTimePart) {
+      const endH = parseTime(secondTimePart);
+      const endHourStr = String(endH.hour).padStart(2, '0');
+      const endMinStr = String(endH.minute).padStart(2, '0');
+      const endLocal = `${baseDate}T${endHourStr}:${endMinStr}:00`;
+      endTime = parseLocalDateTimeToIso(endLocal, options);
+    } else {
+      endTime = new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
+    }
+
+    return { startTime, endTime };
+  } catch {
+    const fallback = new Date().toISOString();
+    return { startTime: fallback, endTime: fallback };
+  }
+}

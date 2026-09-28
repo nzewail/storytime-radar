@@ -64,9 +64,9 @@ export default function AgendaView({
   const endIndex = Math.min(startIndex + pageSize, events.length);
   const pagedEvents = events.slice(startIndex, endIndex);
 
-  // Group paginated events by day string "YYYY-MM-DD"
+  // Group paginated events by local day string "YYYY-MM-DD"
   const groupedEvents = pagedEvents.reduce((acc, ev) => {
-    const dayKey = ev.startTime.slice(0, 10);
+    const dayKey = format(parseISO(ev.startTime), 'yyyy-MM-dd');
     if (!acc[dayKey]) {
       acc[dayKey] = [];
     }

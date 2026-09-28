@@ -1,6 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
+import { parseLocalDateTimeToIso } from '../timezone';
 
 function decodeHtmlEntities(str: string): string {
   return str
@@ -92,11 +93,15 @@ export async function fetchTrumbaEvents(
       `${rawDescription} ${audienceField} ${logisticsField}`
     );
 
-    const startTime = item.startDateTime
-      ? new Date(item.startDateTime).toISOString()
-      : new Date().toISOString();
+    const startTime = parseLocalDateTimeToIso(item.startDateTime, {
+      explicitOffset: item.startTimeZoneOffset,
+      state: matchedBranch.state,
+    });
     const endTime = item.endDateTime
-      ? new Date(item.endDateTime).toISOString()
+      ? parseLocalDateTimeToIso(item.endDateTime, {
+          explicitOffset: item.endTimeZoneOffset || item.startTimeZoneOffset,
+          state: matchedBranch.state,
+        })
       : new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
 
     let eventUrl = item.permaLinkUrl || '';
