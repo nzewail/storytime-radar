@@ -158,10 +158,43 @@ export function parseLocalDateTimeToIso(
  *  - dateStr: "09/28/2026", "2026-09-28", "September 28, 2026"
  *  - timeStr: "10:30 am", "10:30am - 11:00am", "10:30:00"
  */
+/**
+ * Infers duration in minutes from text (title or description) across any provider.
+ * Looks for explicit duration mentions ("20 minutes", "30 mins", "1 hour", "45-minute storytime").
+ */
+export function inferDurationMinutes(text?: string): number | null {
+  if (!text) return null;
+
+  // 1. Hours: "1 hour", "1.5 hours", "2 hr"
+  const hourMatch = text.match(/\b(\d+(?:\.\d+)?)\s*(?:-|–)?\s*(?:hour|hr|hours|hrs)\b/i);
+  if (hourMatch) {
+    const hours = parseFloat(hourMatch[1]);
+    if (!isNaN(hours) && hours > 0 && hours <= 6) {
+      return Math.round(hours * 60);
+    }
+  }
+
+  // 2. Minutes: "20-minute", "30 mins", "45 minutes"
+  const minMatch = text.match(/\b(\d{1,3})\s*(?:-|–)?\s*(?:min|minute|minutes|mins)\b/i);
+  if (minMatch) {
+    const mins = parseInt(minMatch[1], 10);
+    if (mins >= 10 && mins <= 240) {
+      return mins;
+    }
+  }
+
+  return null;
+}
+
 export function combineDateAndTimeToIso(
   dateStr: string,
   timeStr: string,
-  options?: { state?: string; timeZone?: string }
+  options?: {
+    state?: string;
+    timeZone?: string;
+    textForDuration?: string;
+    defaultDurationMinutes?: number;
+  }
 ): { startTime: string; endTime: string } {
   try {
     let year = new Date().getFullYear();
@@ -225,7 +258,9 @@ export function combineDateAndTimeToIso(
       const endLocal = `${baseDate}T${endHourStr}:${endMinStr}:00`;
       endTime = parseLocalDateTimeToIso(endLocal, options);
     } else {
-      endTime = new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
+      const inferredMinutes = inferDurationMinutes(options?.textForDuration);
+      const durationMs = (inferredMinutes || options?.defaultDurationMinutes || 45) * 60000;
+      endTime = new Date(new Date(startTime).getTime() + durationMs).toISOString();
     }
 
     return { startTime, endTime };

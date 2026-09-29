@@ -1,7 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
-import { parseLocalDateTimeToIso, getTimezoneForState } from '../timezone';
+import { parseLocalDateTimeToIso, getTimezoneForState, inferDurationMinutes } from '../timezone';
 
 // In-memory cache for live Communico feeds: 10 minutes TTL
 const communicoCache = new Map<string, { timestamp: number; events: StorytimeEvent[] }>();
@@ -90,7 +90,10 @@ export async function fetchCommunicoEvents(
         ? parseLocalDateTimeToIso(endRaw, {
             state: matchedBranch.state,
           })
-        : new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
+        : new Date(
+            new Date(startTime).getTime() +
+              (inferDurationMinutes(`${rawTitle} ${rawDesc}`) || 45) * 60000
+          ).toISOString();
 
       const eventUrl = item.url || matchedBranch.website || `${baseUrl}/event/${item.id}`;
 

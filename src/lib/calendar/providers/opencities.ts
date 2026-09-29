@@ -301,6 +301,7 @@ export async function fetchOpenCitiesEvents(
 
       const { startTime, endTime } = combineDateAndTimeToIso(datePart, cleanTime, {
         state: matchedBranch.state,
+        textForDuration: `${rawTitle} ${rawDesc}`,
       });
 
       const eventUrl = detail.Link

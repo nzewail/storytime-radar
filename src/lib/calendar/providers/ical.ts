@@ -1,7 +1,7 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
-import { parseLocalDateTimeToIso, getTimezoneForState } from '../timezone';
+import { parseLocalDateTimeToIso, getTimezoneForState, inferDurationMinutes } from '../timezone';
 
 function parseIcalDate(val: string, branchState?: string): string {
   if (val.trim().endsWith('Z')) {
@@ -95,7 +95,12 @@ export async function fetchIcalEvents(
 
       const classification = classifyEvent(title, `${desc} ${categories}`);
       const startTime = dtstartMatch ? parseIcalDate(dtstartMatch[1].trim(), branch.state) : new Date().toISOString();
-      const endTime = dtendMatch ? parseIcalDate(dtendMatch[1].trim(), branch.state) : new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
+      const endTime = dtendMatch
+        ? parseIcalDate(dtendMatch[1].trim(), branch.state)
+        : new Date(
+            new Date(startTime).getTime() +
+              (inferDurationMinutes(`${title} ${desc}`) || 45) * 60000
+          ).toISOString();
 
       const timeSlug = startTime.slice(0, 19).replace(/[^0-9]/g, '');
       const eventIdentifier = uid.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 25);
