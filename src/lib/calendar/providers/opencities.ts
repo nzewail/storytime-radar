@@ -66,18 +66,35 @@ export async function fetchOpenCitiesEvents(
     opencitiesTelemetry.lastDiagnostics.pageUrl = pageUrl;
     opencitiesTelemetry.lastDiagnostics.preconfiguredEntityId = entityId;
 
-    // 1. If entityId is not pre-configured, fetch calendar page HTML to extract data-entity-id
+    // 1. Always fetch the calendar page first to establish the ASP.NET & Akamai WAF session
+    opencitiesTelemetry.lastDiagnostics.stage = 'fetching-page-session';
+    const pageRes = await fetch(pageUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      signal: AbortSignal.timeout(6000),
+    });
+
+    opencitiesTelemetry.lastDiagnostics.pageResStatus = pageRes.status;
+
+    let cookieHeader = '';
+    try {
+      const rawCookies = pageRes.headers.getSetCookie
+        ? pageRes.headers.getSetCookie()
+        : [pageRes.headers.get('set-cookie')];
+      cookieHeader = (rawCookies as string[])
+        .filter(Boolean)
+        .map((c) => c.split(';')[0])
+        .join('; ');
+    } catch {
+      // Cookies not available or failed to parse
+    }
+
+    opencitiesTelemetry.lastDiagnostics.hasCookies = Boolean(cookieHeader);
+
     if (!entityId) {
-      const pageRes = await fetch(pageUrl, {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      opencitiesTelemetry.lastDiagnostics.pageResStatus = pageRes.status;
-
       if (!pageRes.ok) {
         console.warn(`OpenCities calendar page returned status: ${pageRes.status}`);
         return cached ? cached.events : [];
@@ -100,14 +117,21 @@ export async function fetchOpenCitiesEvents(
     opencitiesTelemetry.lastDiagnostics.entityId = entityId;
     opencitiesTelemetry.lastDiagnostics.stage = 'fetching-subcalendars';
 
+    const standardHeaders: Record<string, string> = {
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      Accept: 'application/json, text/javascript, */*; q=0.01',
+      'X-Requested-With': 'XMLHttpRequest',
+      Origin: origin,
+      Referer: pageUrl,
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    };
+
     // 2. Query sub-calendar IDs
     const calListRes = await fetch(
       `${origin}/ocapi/calendars/getcalendars/${entityId}/calendar`,
       {
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        },
+        headers: standardHeaders,
         signal: AbortSignal.timeout(6000),
       }
     );
@@ -132,12 +156,8 @@ export async function fetchOpenCitiesEvents(
     const itemsRes = await fetch(`${origin}/ocapi/calendars/getcalendaritems`, {
       method: 'POST',
       headers: {
+        ...standardHeaders,
         'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Origin: origin,
-        Referer: pageUrl,
       },
       body: JSON.stringify({
         LanguageCode: 'en-US',
@@ -201,11 +221,7 @@ export async function fetchOpenCitiesEvents(
 
         try {
           const detailRes = await fetch(`${origin}/ocapi/get/contentinfo?${params.toString()}`, {
-            headers: {
-              'User-Agent':
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              Referer: pageUrl,
-            },
+            headers: standardHeaders,
             signal: AbortSignal.timeout(6000),
           });
 
