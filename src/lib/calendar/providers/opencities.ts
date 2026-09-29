@@ -38,34 +38,45 @@ export async function fetchOpenCitiesEvents(
   }
 
   try {
-    const urlObj = new URL(calendarUrlOrDomain);
+    let pageUrl = calendarUrlOrDomain;
+    let entityId: string | null = null;
+
+    if (calendarUrlOrDomain.includes('|')) {
+      const [pUrl, eId] = calendarUrlOrDomain.split('|');
+      pageUrl = pUrl;
+      entityId = eId;
+    }
+
+    const urlObj = new URL(pageUrl);
     const origin = urlObj.origin;
 
-    // 1. Fetch calendar page HTML to extract data-entity-id
-    const pageRes = await fetch(calendarUrlOrDomain, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
-      signal: AbortSignal.timeout(8000),
-    });
+    // 1. If entityId is not pre-configured, fetch calendar page HTML to extract data-entity-id
+    if (!entityId) {
+      const pageRes = await fetch(pageUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+        signal: AbortSignal.timeout(5000),
+      });
 
-    if (!pageRes.ok) {
-      console.warn(`OpenCities calendar page returned status: ${pageRes.status}`);
-      return cached ? cached.events : [];
+      if (!pageRes.ok) {
+        console.warn(`OpenCities calendar page returned status: ${pageRes.status}`);
+        return cached ? cached.events : [];
+      }
+
+      const html = await pageRes.text();
+      const entityMatch =
+        html.match(/data-entity-id=['"]([a-f0-9-]+)['"]/i) ||
+        html.match(/data-calendar-id=['"]([a-f0-9-]+)['"]/i);
+
+      if (!entityMatch) {
+        console.warn(`Could not extract OpenCities data-entity-id from ${pageUrl}`);
+        return cached ? cached.events : [];
+      }
+
+      entityId = entityMatch[1];
     }
-
-    const html = await pageRes.text();
-    const entityMatch =
-      html.match(/data-entity-id=['"]([a-f0-9-]+)['"]/i) ||
-      html.match(/data-calendar-id=['"]([a-f0-9-]+)['"]/i);
-
-    if (!entityMatch) {
-      console.warn(`Could not extract OpenCities data-entity-id from ${calendarUrlOrDomain}`);
-      return cached ? cached.events : [];
-    }
-
-    const entityId = entityMatch[1];
 
     // 2. Query sub-calendar IDs
     const calListRes = await fetch(
@@ -101,7 +112,7 @@ export async function fetchOpenCitiesEvents(
         'User-Agent':
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Origin: origin,
-        Referer: calendarUrlOrDomain,
+        Referer: pageUrl,
       },
       body: JSON.stringify({
         LanguageCode: 'en-US',
@@ -165,7 +176,7 @@ export async function fetchOpenCitiesEvents(
             headers: {
               'User-Agent':
                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              Referer: calendarUrlOrDomain,
+              Referer: pageUrl,
             },
             signal: AbortSignal.timeout(6000),
           });
@@ -210,7 +221,9 @@ export async function fetchOpenCitiesEvents(
       if (!isKidEvent) continue;
 
       // Match to library branch
-      const matchedBranch = matchEventToBranch(rawVenue, rawTitle, rawDesc, systemBranches);
+      const defaultBranch = systemBranches.length === 1 ? systemBranches[0] : null;
+      const matchedBranch =
+        matchEventToBranch(rawVenue, rawTitle, rawDesc, systemBranches) || defaultBranch;
       if (!matchedBranch) continue;
 
       const classification = classifyEvent(rawTitle, rawDesc);

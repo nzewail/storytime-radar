@@ -23,7 +23,7 @@ const KNOWN_SOURCES: Record<string, CalendarSource> = {
   'sys-ca0138': {
     systemId: 'sys-ca0138',
     platform: 'opencities',
-    calendarId: 'https://www.southpasadenaca.gov/Your-Government/Department-Service-Areas/Library/Library-Events-Calendar',
+    calendarId: 'https://www.southpasadenaca.gov/Your-Government/Department-Service-Areas/Library/Library-Events-Calendar|04fc7891-0f4d-4d76-8689-c065e56ccf70',
   },
 };
 
