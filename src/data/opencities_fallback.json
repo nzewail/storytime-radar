@@ -11,7 +11,7 @@
     "title": "Thursday Storytime at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-01T17:30:00.000Z",
-    "endTime": "2026-10-01T18:15:00.000Z",
+    "endTime": "2026-10-01T17:50:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -37,7 +37,7 @@
     "title": "Thursday Storytime at 11:00 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 11:00 AM from September 15 to November 21.",
     "startTime": "2026-10-01T18:00:00.000Z",
-    "endTime": "2026-10-01T18:45:00.000Z",
+    "endTime": "2026-10-01T18:20:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -63,7 +63,7 @@
     "title": "Saturday Storytimes at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Children's Room every Saturday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-03T17:30:00.000Z",
-    "endTime": "2026-10-03T18:15:00.000Z",
+    "endTime": "2026-10-03T18:00:00.000Z",
     "ageGroup": "kids",
     "targetAges": [
       "kids"
@@ -87,7 +87,7 @@
     "title": "Tuesday Storytimes",
     "description": "Join us for Storytime! Join the fun in the Library Community Room on Tuesdays at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-06T17:30:00.000Z",
-    "endTime": "2026-10-06T18:15:00.000Z",
+    "endTime": "2026-10-06T18:00:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -113,7 +113,7 @@
     "title": "Thursday Storytime at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-08T17:30:00.000Z",
-    "endTime": "2026-10-08T18:15:00.000Z",
+    "endTime": "2026-10-08T17:50:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -139,7 +139,7 @@
     "title": "Thursday Storytime at 11:00 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 11:00 AM from September 15 to November 21.",
     "startTime": "2026-10-08T18:00:00.000Z",
-    "endTime": "2026-10-08T18:45:00.000Z",
+    "endTime": "2026-10-08T18:20:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -165,7 +165,7 @@
     "title": "Tuesday Storytimes",
     "description": "Join us for Storytime! Join the fun in the Library Community Room on Tuesdays at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-11-03T18:30:00.000Z",
-    "endTime": "2026-11-03T19:15:00.000Z",
+    "endTime": "2026-11-03T19:00:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -191,7 +191,7 @@
     "title": "Thursday Storytime at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-11-05T18:30:00.000Z",
-    "endTime": "2026-11-05T19:15:00.000Z",
+    "endTime": "2026-11-05T18:50:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -217,7 +217,7 @@
     "title": "Thursday Storytime at 11:00 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 11:00 AM from September 15 to November 21.",
     "startTime": "2026-11-05T19:00:00.000Z",
-    "endTime": "2026-11-05T19:45:00.000Z",
+    "endTime": "2026-11-05T19:20:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -243,7 +243,7 @@
     "title": "Family Retro Game Night at 3:00 PM",
     "description": "On Friday, September 11, October 9, and November 13, from 3:00–5:00 PM, gather your family and join us for an afternoon of classic board games! Ages 5 and up.",
     "startTime": "2026-10-09T19:00:00.000Z",
-    "endTime": "2026-10-09T19:45:00.000Z",
+    "endTime": "2026-10-09T21:00:00.000Z",
     "ageGroup": "all-ages",
     "targetAges": [
       "preschool",
@@ -268,7 +268,7 @@
     "title": "Saturday Storytimes at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Children's Room every Saturday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-10T17:30:00.000Z",
-    "endTime": "2026-10-10T18:15:00.000Z",
+    "endTime": "2026-10-10T18:00:00.000Z",
     "ageGroup": "kids",
     "targetAges": [
       "kids"
@@ -292,7 +292,7 @@
     "title": "Saturday Storytimes at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Children's Room every Saturday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-11-07T18:30:00.000Z",
-    "endTime": "2026-11-07T19:15:00.000Z",
+    "endTime": "2026-11-07T19:00:00.000Z",
     "ageGroup": "kids",
     "targetAges": [
       "kids"
@@ -316,7 +316,7 @@
     "title": "Tuesday Storytimes",
     "description": "Join us for Storytime! Join the fun in the Library Community Room on Tuesdays at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-11-10T18:30:00.000Z",
-    "endTime": "2026-11-10T19:15:00.000Z",
+    "endTime": "2026-11-10T19:00:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -342,7 +342,7 @@
     "title": "Thursday Storytime at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-11-12T18:30:00.000Z",
-    "endTime": "2026-11-12T19:15:00.000Z",
+    "endTime": "2026-11-12T18:50:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -368,7 +368,7 @@
     "title": "Thursday Storytime at 11:00 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 11:00 AM from September 15 to November 21.",
     "startTime": "2026-11-12T19:00:00.000Z",
-    "endTime": "2026-11-12T19:45:00.000Z",
+    "endTime": "2026-11-12T19:20:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -394,7 +394,7 @@
     "title": "Tuesday Storytimes",
     "description": "Join us for Storytime! Join the fun in the Library Community Room on Tuesdays at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-13T17:30:00.000Z",
-    "endTime": "2026-10-13T18:15:00.000Z",
+    "endTime": "2026-10-13T18:00:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -420,7 +420,7 @@
     "title": "Tuesday Storytimes",
     "description": "Join us for Storytime! Join the fun in the Library Community Room on Tuesdays at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-09-29T17:30:00.000Z",
-    "endTime": "2026-09-29T18:15:00.000Z",
+    "endTime": "2026-09-29T18:00:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -446,7 +446,7 @@
     "title": "Thursday Storytime at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-15T17:30:00.000Z",
-    "endTime": "2026-10-15T18:15:00.000Z",
+    "endTime": "2026-10-15T17:50:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -472,7 +472,7 @@
     "title": "Thursday Storytime at 11:00 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 11:00 AM from September 15 to November 21.",
     "startTime": "2026-10-15T18:00:00.000Z",
-    "endTime": "2026-10-15T18:45:00.000Z",
+    "endTime": "2026-10-15T18:20:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -498,7 +498,7 @@
     "title": "LEGO® Free Play at 3:00 PM",
     "description": "For all ages!\r\n\r\nUse your imagination to create with LEGO® blocks at LEGO® Free Play.",
     "startTime": "2026-10-16T19:00:00.000Z",
-    "endTime": "2026-10-16T19:45:00.000Z",
+    "endTime": "2026-10-16T21:00:00.000Z",
     "ageGroup": "all-ages",
     "targetAges": [
       "all-ages"
@@ -522,7 +522,7 @@
     "title": "Saturday Storytimes at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Children's Room every Saturday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-17T17:30:00.000Z",
-    "endTime": "2026-10-17T18:15:00.000Z",
+    "endTime": "2026-10-17T18:00:00.000Z",
     "ageGroup": "kids",
     "targetAges": [
       "kids"
@@ -546,7 +546,7 @@
     "title": "Toddler Dance Party at 4:00 PM",
     "description": "Geared toward ages 1 to 3 years old, Toddler Dance Parties are fun and exploratory dance-alongs led by library staff. Attendees and their guardians will dance to family-friendly action songs that encourage kinetic learning, spatial awareness, and self-confidence.",
     "startTime": "2026-10-19T19:00:00.000Z",
-    "endTime": "2026-10-19T19:45:00.000Z",
+    "endTime": "2026-10-19T19:30:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "baby",
@@ -571,7 +571,7 @@
     "title": "Tuesday Storytimes",
     "description": "Join us for Storytime! Join the fun in the Library Community Room on Tuesdays at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-20T17:30:00.000Z",
-    "endTime": "2026-10-20T18:15:00.000Z",
+    "endTime": "2026-10-20T18:00:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -597,7 +597,7 @@
     "title": "Thursday Storytime at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-22T17:30:00.000Z",
-    "endTime": "2026-10-22T18:15:00.000Z",
+    "endTime": "2026-10-22T17:50:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -623,7 +623,7 @@
     "title": "Thursday Storytime at 11:00 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 11:00 AM from September 15 to November 21.",
     "startTime": "2026-10-22T18:00:00.000Z",
-    "endTime": "2026-10-22T18:45:00.000Z",
+    "endTime": "2026-10-22T18:20:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -649,7 +649,7 @@
     "title": "Saturday Storytimes at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Children's Room every Saturday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-24T17:30:00.000Z",
-    "endTime": "2026-10-24T18:15:00.000Z",
+    "endTime": "2026-10-24T18:00:00.000Z",
     "ageGroup": "kids",
     "targetAges": [
       "kids"
@@ -673,7 +673,7 @@
     "title": "Tuesday Storytimes",
     "description": "Join us for Storytime! Join the fun in the Library Community Room on Tuesdays at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-27T17:30:00.000Z",
-    "endTime": "2026-10-27T18:15:00.000Z",
+    "endTime": "2026-10-27T18:00:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -699,7 +699,7 @@
     "title": "Thursday Storytime at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-29T17:30:00.000Z",
-    "endTime": "2026-10-29T18:15:00.000Z",
+    "endTime": "2026-10-29T17:50:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -725,7 +725,7 @@
     "title": "Thursday Storytime at 11:00 AM",
     "description": "Join us for Storytime! Join the fun in the Library Community Room every Thursday at 11:00 AM from September 15 to November 21.",
     "startTime": "2026-10-29T18:00:00.000Z",
-    "endTime": "2026-10-29T18:45:00.000Z",
+    "endTime": "2026-10-29T18:20:00.000Z",
     "ageGroup": "toddler",
     "targetAges": [
       "all-ages",
@@ -751,7 +751,7 @@
     "title": "Family Retro Game Night at 3:00 PM",
     "description": "On Friday, September 11, October 9, and November 13, from 3:00–5:00 PM, gather your family and join us for an afternoon of classic board games! Ages 5 and up.",
     "startTime": "2026-11-13T20:00:00.000Z",
-    "endTime": "2026-11-13T20:45:00.000Z",
+    "endTime": "2026-11-13T22:00:00.000Z",
     "ageGroup": "all-ages",
     "targetAges": [
       "preschool",
@@ -776,7 +776,7 @@
     "title": "Saturday Storytimes at 10:30 AM",
     "description": "Join us for Storytime! Join the fun in the Library Children's Room every Saturday at 10:30 AM from September 15 to November 21.",
     "startTime": "2026-10-31T17:30:00.000Z",
-    "endTime": "2026-10-31T18:15:00.000Z",
+    "endTime": "2026-10-31T18:00:00.000Z",
     "ageGroup": "kids",
     "targetAges": [
       "kids"
