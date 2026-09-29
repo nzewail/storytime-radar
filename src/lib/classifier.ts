@@ -71,7 +71,7 @@ export function classifyEvent(title: string, description: string = ''): Classifi
 
   // Check multi-age spans: 0-3, 0-5, 2-5
   const isZeroToThree = /\b(0\s*-\s*3|0\s*to\s*3|birth\s*to\s*3)\b/i.test(combined);
-  const isZeroToFive = /\b(0\s*-\s*5|0\s*to\s*5|birth\s*to\s*5|early learning|under 5)\b/i.test(combined);
+  const isZeroToFive = /\b(0\s*-\s*5|0\s*to\s*5|birth\s*to\s*5|early learning|early literacy|young children|under 5)\b/i.test(combined);
   const isTwoToFive = /\b(2\s*-\s*5|2\s*to\s*5)\b/i.test(combined);
 
   // Baby patterns
@@ -126,6 +126,17 @@ export function classifyEvent(title: string, description: string = ''): Classifi
   // If nothing matched, default to all-ages
   if (targetAgesSet.size === 0) {
     targetAgesSet.add('all-ages');
+  }
+
+  // Generic storytimes (e.g. "Thursday Storytime", "Tuesday Storytimes") without specific age restrictions
+  // are intended for young children/early literacy (toddlers & preschoolers) as well as all-ages
+  if (
+    targetAgesSet.has('all-ages') &&
+    targetAgesSet.size === 1 &&
+    /\b(story\s*time|storytimes?|rhymetime)\b/i.test(lowerTitle)
+  ) {
+    targetAgesSet.add('toddler');
+    targetAgesSet.add('preschool');
   }
 
   const targetAges = Array.from(targetAgesSet);

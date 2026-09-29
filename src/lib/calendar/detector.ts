@@ -19,6 +19,12 @@ const KNOWN_SOURCES: Record<string, CalendarSource> = {
   'sys-ca0063': { systemId: 'sys-ca0063', platform: 'drupal', calendarId: 'https://www.lapl.org' },
   // St. Clair County Library System (Port Huron & 10 branches) -> LibCal
   'sys-mi0321': { systemId: 'sys-mi0321', platform: 'libcal', calendarId: 'https://stclaircountylibrary.org' },
+  // South Pasadena Public Library (FSCS CA0138) -> OpenCities
+  'sys-ca0138': {
+    systemId: 'sys-ca0138',
+    platform: 'opencities',
+    calendarId: 'https://www.southpasadenaca.gov/Your-Government/Department-Service-Areas/Library/Library-Events-Calendar',
+  },
 };
 
 /**
@@ -90,6 +96,21 @@ export async function detectCalendarSource(
         html.includes('/events/search')
       ) {
         const source: CalendarSource = { systemId, platform: 'drupal', calendarId: sampleBranch.website };
+        detectionCache.set(systemId, source);
+        return source;
+      }
+
+      // Check OpenCities
+      if (
+        html.includes('OpenCities') ||
+        html.includes('oc-calendar') ||
+        html.includes('/ocapi/')
+      ) {
+        const calLink = html.match(/href="([^"]*(?:calendar|events)[^"]*)"/i);
+        const targetUrl = calLink
+          ? (calLink[1].startsWith('http') ? calLink[1] : `${sampleBranch.website.replace(/\/+$/, '')}/${calLink[1].replace(/^\/+/, '')}`)
+          : sampleBranch.website;
+        const source: CalendarSource = { systemId, platform: 'opencities', calendarId: targetUrl };
         detectionCache.set(systemId, source);
         return source;
       }

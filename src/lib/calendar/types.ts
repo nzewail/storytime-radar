@@ -1,6 +1,6 @@
 import { StorytimeEvent, LibraryBranch } from '@/types';
 
-export type CalendarPlatform = 'trumba' | 'libcal' | 'communico' | 'drupal' | 'ical' | 'unsupported';
+export type CalendarPlatform = 'trumba' | 'libcal' | 'communico' | 'drupal' | 'ical' | 'opencities' | 'unsupported';
 
 export interface CalendarSource {
   systemId: string;

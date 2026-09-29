@@ -63,6 +63,7 @@ const KNOWN_SYSTEM_WEBSITES: Record<string, string> = {
   'CO0026': 'https://www.denverlibrary.org',
   'MA0034': 'https://www.bpl.org',
   'MI0321': 'https://stclaircountylibrary.org',
+  'CA0138': 'https://www.southpasadenaca.gov/Your-Government/Department-Service-Areas/Library',
 };
 
 // Deterministic pleasing color palette generator for any library system in America

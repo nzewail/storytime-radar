@@ -7,6 +7,7 @@ import { fetchCommunicoEvents } from './providers/communico';
 import { fetchDrupalEvents } from './providers/drupal';
 import { fetchLibCalEvents } from './providers/libcal';
 import { fetchIcalEvents } from './providers/ical';
+import { fetchOpenCitiesEvents } from './providers/opencities';
 
 /**
  * Fetch verified real events for requested branches.
@@ -75,6 +76,9 @@ export async function fetchEventsForBranches(
           break;
         case 'ical':
           systemEvents = await fetchIcalEvents(source.calendarId, allSystemBranches);
+          break;
+        case 'opencities':
+          systemEvents = await fetchOpenCitiesEvents(source.calendarId, allSystemBranches);
           break;
         default:
           unsupportedBranches.push(...systemBranches);
