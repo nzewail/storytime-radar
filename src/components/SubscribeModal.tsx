@@ -53,7 +53,7 @@ export default function SubscribeModal({
 
   const httpFeedUrl = `${origin}/api/feed.ics${queryString ? '?' + queryString : ''}`;
   const webcalUrl = `webcal://${cleanHost}/api/feed.ics${queryString ? '?' + queryString : ''}`;
-  const googleCalSubscribeUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;
+  const googleCalSubscribeUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(httpFeedUrl)}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(httpFeedUrl);
