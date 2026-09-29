@@ -37,17 +37,24 @@ export async function GET(req: NextRequest) {
 
   const isDebug = searchParams.get('debug') === '1';
 
+  let debugInfo: any = null;
+  if (isDebug) {
+    const sample = branchIds.length > 0 ? (await import('@/lib/imls-db')).getBranchesByIds(branchIds) : [];
+    const detected = sample[0] ? await (await import('@/lib/calendar/detector')).detectCalendarSource(sample[0].systemId, sample[0]) : null;
+    debugInfo = {
+      branchIds,
+      branchesFound: sample.length,
+      sampleBranch: sample[0] || null,
+      detectedSource: detected,
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      opencities: require('@/lib/calendar/providers/opencities').lastOpenCitiesDiagnostics,
+    };
+  }
+
   return NextResponse.json({
     events,
     total: events.length,
     unsupportedBranches,
-    ...(isDebug
-      ? {
-          debug: {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            opencities: require('@/lib/calendar/providers/opencities').lastOpenCitiesDiagnostics,
-          },
-        }
-      : {}),
+    ...(isDebug ? { debug: debugInfo } : {}),
   });
 }
