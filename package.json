@@ -10,7 +10,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@touch4it/ical-timezones": "^1.9.0",
     "@vercel/analytics": "^2.0.1",
     "date-fns": "^4.4.0",
     "ical-generator": "^11.1.1",
