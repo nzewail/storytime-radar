@@ -230,13 +230,15 @@ export function combineDateAndTimeToIso(
     const baseDate = `${yyyy}-${mm}-${dd}`;
 
     const parseTime = (t: string) => {
-      const match = t.match(/(\d+):?(\d+)?\s*(am|pm)/i);
+      const match =
+        t.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(am|pm)?/i) ||
+        t.match(/(\d{1,2})\s*(am|pm)/i);
       if (!match) return { hour: 10, minute: 0 };
       let h = parseInt(match[1], 10);
-      const m = match[2] ? parseInt(match[2], 10) : 0;
-      const isPm = match[3].toLowerCase() === 'pm';
-      if (isPm && h < 12) h += 12;
-      if (!isPm && h === 12) h = 0;
+      const m = match[2] && !isNaN(parseInt(match[2], 10)) ? parseInt(match[2], 10) : 0;
+      const ampm = (match[3] || (isNaN(parseInt(match[2], 10)) ? match[2] : '') || '').toLowerCase();
+      if (ampm === 'pm' && h < 12) h += 12;
+      if (ampm === 'am' && h === 12) h = 0;
       return { hour: h, minute: m };
     };
 

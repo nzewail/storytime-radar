@@ -355,6 +355,11 @@ function HomeContent() {
   // Filtered Events
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
+      // Branch filter: only display events for selected branches
+      if (selectedBranchIds.length > 0 && !selectedBranchIds.includes(ev.branchId)) {
+        return false;
+      }
+
       // Age filter
       if (selectedAges.length > 0) {
         const eventAges = ev.targetAges && ev.targetAges.length > 0 ? ev.targetAges : [ev.ageGroup];
@@ -419,7 +424,13 @@ function HomeContent() {
 
       return true;
     });
-  }, [events, selectedAges, selectedEventTypes, selectedTimeOfDay, dateFilter, searchFilter]);
+  }, [events, selectedBranchIds, selectedAges, selectedEventTypes, selectedTimeOfDay, dateFilter, searchFilter]);
+
+  // Only show unsupported warnings for branches the user actually has selected
+  const activeUnsupportedBranches = useMemo(() => {
+    if (selectedBranchIds.length === 0) return [];
+    return unsupportedBranches.filter((b) => selectedBranchIds.includes(b.id));
+  }, [unsupportedBranches, selectedBranchIds]);
 
   const hasActiveFilters =
     selectedAges.length > 0 ||
@@ -478,25 +489,25 @@ function HomeContent() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Unsupported branches alert */}
-        {unsupportedBranches.length > 0 && (
+        {activeUnsupportedBranches.length > 0 && (
           <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3.5 text-sm">
             <span className="text-xl shrink-0">⚠️</span>
             <div className="flex-1">
               <h4 className="font-semibold text-amber-900 dark:text-amber-200">
-                {unsupportedBranches.length === 1
-                  ? `Live calendar feed unavailable for ${unsupportedBranches[0].name}`
-                  : `Live calendar feed unavailable for ${unsupportedBranches.length} selected libraries`}
+                {activeUnsupportedBranches.length === 1
+                  ? `Live calendar feed unavailable for ${activeUnsupportedBranches[0].name}`
+                  : `Live calendar feed unavailable for ${activeUnsupportedBranches.length} selected libraries`}
               </h4>
               <p className="mt-1 text-amber-800/90 dark:text-amber-300/80 leading-relaxed text-xs sm:text-sm">
                 We couldn't retrieve a live calendar feed for{' '}
                 <span className="font-medium">
-                  {unsupportedBranches.slice(0, 3).map((b) => b.name).join(', ')}
-                  {unsupportedBranches.length > 3 ? ` and ${unsupportedBranches.length - 3} more` : ''}
+                  {activeUnsupportedBranches.slice(0, 3).map((b) => b.name).join(', ')}
+                  {activeUnsupportedBranches.length > 3 ? ` and ${activeUnsupportedBranches.length - 3} more` : ''}
                 </span>
                 . We only display verified real events — check their official website for storytime schedules.
               </p>
               <div className="mt-2.5 flex flex-wrap gap-2">
-                {unsupportedBranches.slice(0, 4).map((b) => (
+                {activeUnsupportedBranches.slice(0, 4).map((b) => (
                   <a
                     key={b.id}
                     href={

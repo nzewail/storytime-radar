@@ -297,7 +297,7 @@ export async function fetchOpenCitiesEvents(
       const datePart = parts[0] || '';
       const timePart = parts[1] || '';
       const ampm = parts[2] || '';
-      const cleanTime = ampm ? `${timePart.slice(0, 5)} ${ampm}` : timePart;
+      const cleanTime = ampm ? `${timePart.replace(/:\d{2}$/, '')} ${ampm}` : timePart;
 
       const { startTime, endTime } = combineDateAndTimeToIso(datePart, cleanTime, {
         state: matchedBranch.state,
