@@ -1,9 +1,8 @@
-import fs from 'fs';
-import path from 'path';
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
 import { combineDateAndTimeToIso, getTimezoneForState } from '../timezone';
+import fallbackEventsData from '@/data/opencities_fallback.json';
 
 export const opencitiesTelemetry = {
   lastDiagnostics: null as any,
@@ -18,24 +17,13 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
  * blocks incoming serverless/datacenter IP ranges.
  */
 function getFallbackOpenCitiesEvents(systemBranches: LibraryBranch[]): StorytimeEvent[] {
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'opencities_fallback.json');
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, 'utf8');
-      const allEvents: StorytimeEvent[] = JSON.parse(raw);
-      const nowTime = Date.now();
-      const targetSystemIds = new Set(systemBranches.map((b) => b.systemId));
-      // Return upcoming events belonging to this system
-      return allEvents.filter(
-        (e) =>
-          targetSystemIds.has(e.systemId) &&
-          new Date(e.startTime).getTime() >= nowTime - 86400000
-      );
-    }
-  } catch (err) {
-    console.warn('Error reading OpenCities fallback snapshot:', err);
-  }
-  return [];
+  const nowTime = Date.now();
+  const targetSystemIds = new Set(systemBranches.map((b) => b.systemId));
+  return (fallbackEventsData as unknown as StorytimeEvent[]).filter(
+    (e) =>
+      targetSystemIds.has(e.systemId) &&
+      new Date(e.startTime).getTime() >= nowTime - 86400000
+  );
 }
 
 interface OpenCitiesItemDetail {
