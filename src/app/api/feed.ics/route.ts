@@ -1,18 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchEventsForBranches } from '@/lib/calendar';
 import { buildIcalFeed } from '@/lib/ical-builder';
+import { getLibrariesWithinRadius } from '@/lib/imls-db';
 import { AgeGroup, EventType } from '@/types';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
 
   const branchesParam = searchParams.get('branches') || searchParams.get('branch');
+  const latStr = searchParams.get('lat');
+  const lonStr = searchParams.get('lon');
+  const radiusStr = searchParams.get('radius');
   const agesParam = searchParams.get('ages') || searchParams.get('age');
   const typesParam = searchParams.get('types') || searchParams.get('type');
 
-  const branchIds = branchesParam
-    ? branchesParam.split(',').map((s) => s.trim()).filter(Boolean)
-    : [];
+  let branchIds: string[] = [];
+
+  if (branchesParam) {
+    branchIds = branchesParam.split(',').map((s) => s.trim()).filter(Boolean);
+  } else if (latStr && lonStr) {
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+    const radius = radiusStr ? parseFloat(radiusStr) : 15;
+    if (!isNaN(lat) && !isNaN(lon)) {
+      const { branches } = getLibrariesWithinRadius(lat, lon, radius);
+      branchIds = branches.map((b) => b.id);
+    }
+  } else {
+    // Default to Pasadena radius if no branch or coordinates specified
+    const { branches } = getLibrariesWithinRadius(34.1478, -118.1445, 15);
+    branchIds = branches.map((b) => b.id);
+  }
+
   const selectedAges = (agesParam
     ? agesParam.split(',').map((s) => s.trim()).filter(Boolean)
     : []) as AgeGroup[];

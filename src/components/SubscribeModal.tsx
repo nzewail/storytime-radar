@@ -20,6 +20,9 @@ interface SubscribeModalProps {
   selectedBranchIds: string[];
   selectedAges: AgeGroup[];
   selectedEventTypes: EventType[];
+  coords?: { lat: number; lon: number };
+  radiusMiles?: number;
+  totalBranches?: number;
 }
 
 export default function SubscribeModal({
@@ -28,16 +31,28 @@ export default function SubscribeModal({
   selectedBranchIds,
   selectedAges,
   selectedEventTypes,
+  coords,
+  radiusMiles = 15,
+  totalBranches = 0,
 }: SubscribeModalProps) {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
-  // Build query string
+  // Build compact query string to prevent Google Calendar URL truncation
   const params = new URLSearchParams();
-  if (selectedBranchIds.length > 0) {
+  const isSubset = totalBranches > 0 && selectedBranchIds.length < totalBranches;
+  
+  if (isSubset && selectedBranchIds.length <= 15) {
+    params.set('branches', selectedBranchIds.join(','));
+  } else if (coords) {
+    params.set('lat', coords.lat.toFixed(4));
+    params.set('lon', coords.lon.toFixed(4));
+    params.set('radius', String(radiusMiles));
+  } else if (selectedBranchIds.length > 0 && selectedBranchIds.length <= 15) {
     params.set('branches', selectedBranchIds.join(','));
   }
+
   if (selectedAges.length > 0) {
     params.set('ages', selectedAges.join(','));
   }
@@ -53,7 +68,7 @@ export default function SubscribeModal({
 
   const httpFeedUrl = `${origin}/api/feed.ics${queryString ? '?' + queryString : ''}`;
   const webcalUrl = `webcal://${cleanHost}/api/feed.ics${queryString ? '?' + queryString : ''}`;
-  const googleCalSubscribeUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(httpFeedUrl)}`;
+  const googleCalSubscribeUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(httpFeedUrl);

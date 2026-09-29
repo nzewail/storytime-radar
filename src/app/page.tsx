@@ -389,6 +389,9 @@ export default function Home() {
         selectedBranchIds={selectedBranchIds}
         selectedAges={selectedAges}
         selectedEventTypes={selectedEventTypes}
+        coords={coords}
+        radiusMiles={radiusMiles}
+        totalBranches={branches.length}
       />
 
       <LibrarySelectorModal
