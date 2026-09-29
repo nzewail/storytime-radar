@@ -43,7 +43,9 @@ export async function GET(req: NextRequest) {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': 'inline; filename="storytimes.ics"',
-      'Cache-Control': 'public, max-age=1800, s-maxage=1800',
+      'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
     },
   });
 }
