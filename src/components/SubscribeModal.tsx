@@ -45,7 +45,7 @@ export default function SubscribeModal({
     params.set('types', selectedEventTypes.join(','));
   }
   // Cache buster to force Google Calendar's URL proxy to fetch the fresh RFC-compliant feed
-  params.set('v', '2');
+  params.set('v', '3');
 
   const queryString = params.toString();
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://storytimeradar.local';

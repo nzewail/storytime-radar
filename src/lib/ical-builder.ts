@@ -38,15 +38,17 @@ export function buildIcalFeed(
 
     // Clean stable UID ending in standard domain
     const cleanId = event.id.replace(/[^a-zA-Z0-9_-]/g, '-');
-    const stableStartTime = new Date(event.startTime);
+    const stableStamp = new Date(event.startTime);
     const eventTimezone = event.timezone || 'America/Los_Angeles';
+    const localStart = getLocalDateForTimezone(event.startTime, eventTimezone);
+    const localEnd = getLocalDateForTimezone(event.endTime, eventTimezone);
 
     calendar.createEvent({
       id: `${cleanId}@storytimeradar.com`,
-      start: stableStartTime,
-      end: new Date(event.endTime),
+      start: localStart,
+      end: localEnd,
       timezone: eventTimezone,
-      stamp: stableStartTime, // Stable stamp prevents Google Calendar from re-syncing as fresh events
+      stamp: stableStamp, // Stable stamp prevents Google Calendar from re-syncing as fresh events
       sequence: 1,
       summary,
       description,
@@ -57,6 +59,38 @@ export function buildIcalFeed(
   }
 
   return calendar.toString();
+}
+
+/**
+ * Constructs a Date object whose host-local methods (getHours, getMinutes, etc.)
+ * return the exact wall-clock time in the target IANA timezone, regardless of the
+ * server's host environment timezone (e.g. Vercel UTC vs local dev).
+ */
+function getLocalDateForTimezone(isoStr: string, timeZone: string): Date {
+  const d = new Date(isoStr);
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  });
+  const parts = formatter.formatToParts(d);
+  const p: Record<string, string> = {};
+  for (const part of parts) {
+    p[part.type] = part.value;
+  }
+  return new Date(
+    parseInt(p.year, 10),
+    parseInt(p.month, 10) - 1,
+    parseInt(p.day, 10),
+    parseInt(p.hour, 10),
+    parseInt(p.minute, 10),
+    parseInt(p.second, 10)
+  );
 }
 
 /**
