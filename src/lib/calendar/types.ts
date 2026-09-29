@@ -11,4 +11,5 @@ export interface CalendarSource {
 export interface EventsFetchResult {
   events: StorytimeEvent[];
   unsupportedBranches: LibraryBranch[];
+  debug?: any;
 }

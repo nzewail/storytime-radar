@@ -7,7 +7,7 @@ import { fetchCommunicoEvents } from './providers/communico';
 import { fetchDrupalEvents } from './providers/drupal';
 import { fetchLibCalEvents } from './providers/libcal';
 import { fetchIcalEvents } from './providers/ical';
-import { fetchOpenCitiesEvents } from './providers/opencities';
+import { fetchOpenCitiesEvents, opencitiesTelemetry } from './providers/opencities';
 
 /**
  * Fetch verified real events for requested branches.
@@ -103,5 +103,8 @@ export async function fetchEventsForBranches(
   return {
     events: allEvents,
     unsupportedBranches,
+    debug: {
+      opencities: opencitiesTelemetry.lastDiagnostics,
+    },
   };
 }

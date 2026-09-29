@@ -20,7 +20,9 @@ export async function GET(req: NextRequest) {
     : []) as EventType[];
 
   // Fetch verified real events via generic calendar platform dispatch
-  let { events, unsupportedBranches } = await fetchEventsForBranches(branchIds);
+  const fetchResult = await fetchEventsForBranches(branchIds);
+  let events = fetchResult.events;
+  const unsupportedBranches = fetchResult.unsupportedBranches;
 
   // Filter by age group
   if (selectedAges.length > 0) {
@@ -46,8 +48,7 @@ export async function GET(req: NextRequest) {
       branchesFound: sample.length,
       sampleBranch: sample[0] || null,
       detectedSource: detected,
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      opencities: require('@/lib/calendar/providers/opencities').lastOpenCitiesDiagnostics,
+      dispatchDebug: fetchResult.debug,
     };
   }
 

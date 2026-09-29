@@ -3,7 +3,9 @@ import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
 import { combineDateAndTimeToIso, getTimezoneForState } from '../timezone';
 
-export let lastOpenCitiesDiagnostics: any = null;
+export const opencitiesTelemetry = {
+  lastDiagnostics: null as any,
+};
 
 // In-memory cache for live OpenCities feeds: 10 minutes TTL
 const opencitiesCache = new Map<string, { timestamp: number; events: StorytimeEvent[] }>();
@@ -39,6 +41,13 @@ export async function fetchOpenCitiesEvents(
     return cached.events;
   }
 
+  opencitiesTelemetry.lastDiagnostics = {
+    stage: 'started',
+    calendarUrlOrDomain,
+    systemBranchesCount: systemBranches.length,
+    timestamp: now,
+  };
+
   try {
     let pageUrl = calendarUrlOrDomain;
     let entityId: string | null = null;
@@ -52,6 +61,11 @@ export async function fetchOpenCitiesEvents(
     const urlObj = new URL(pageUrl);
     const origin = urlObj.origin;
 
+    opencitiesTelemetry.lastDiagnostics.stage = 'resolving-entity';
+    opencitiesTelemetry.lastDiagnostics.origin = origin;
+    opencitiesTelemetry.lastDiagnostics.pageUrl = pageUrl;
+    opencitiesTelemetry.lastDiagnostics.preconfiguredEntityId = entityId;
+
     // 1. If entityId is not pre-configured, fetch calendar page HTML to extract data-entity-id
     if (!entityId) {
       const pageRes = await fetch(pageUrl, {
@@ -61,6 +75,8 @@ export async function fetchOpenCitiesEvents(
         },
         signal: AbortSignal.timeout(5000),
       });
+
+      opencitiesTelemetry.lastDiagnostics.pageResStatus = pageRes.status;
 
       if (!pageRes.ok) {
         console.warn(`OpenCities calendar page returned status: ${pageRes.status}`);
@@ -73,12 +89,16 @@ export async function fetchOpenCitiesEvents(
         html.match(/data-calendar-id=['"]([a-f0-9-]+)['"]/i);
 
       if (!entityMatch) {
+        opencitiesTelemetry.lastDiagnostics.stage = 'entity-not-found';
         console.warn(`Could not extract OpenCities data-entity-id from ${pageUrl}`);
         return cached ? cached.events : [];
       }
 
       entityId = entityMatch[1];
     }
+
+    opencitiesTelemetry.lastDiagnostics.entityId = entityId;
+    opencitiesTelemetry.lastDiagnostics.stage = 'fetching-subcalendars';
 
     // 2. Query sub-calendar IDs
     const calListRes = await fetch(
@@ -101,6 +121,9 @@ export async function fetchOpenCitiesEvents(
       }
     }
 
+    opencitiesTelemetry.lastDiagnostics.calendarIds = calendarIds;
+    opencitiesTelemetry.lastDiagnostics.stage = 'posting-getcalendaritems';
+
     // 3. Post getcalendaritems for the next 45 days
     const today = new Date();
     const startDate = today.toISOString().slice(0, 10);
@@ -109,7 +132,7 @@ export async function fetchOpenCitiesEvents(
     const itemsRes = await fetch(`${origin}/ocapi/calendars/getcalendaritems`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Type': 'application/json',
         Accept: 'application/json',
         'User-Agent':
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -125,7 +148,10 @@ export async function fetchOpenCitiesEvents(
       signal: AbortSignal.timeout(10000),
     });
 
+    opencitiesTelemetry.lastDiagnostics.itemsResStatus = itemsRes.status;
+
     if (!itemsRes.ok) {
+      opencitiesTelemetry.lastDiagnostics.stage = 'getcalendaritems-failed';
       console.warn(`OpenCities getcalendaritems returned status: ${itemsRes.status}`);
       return cached ? cached.events : [];
     }
@@ -274,7 +300,9 @@ export async function fetchOpenCitiesEvents(
       });
     }
 
-    lastOpenCitiesDiagnostics = {
+    opencitiesTelemetry.lastDiagnostics = {
+      ...opencitiesTelemetry.lastDiagnostics,
+      stage: 'completed',
       success: true,
       entityId,
       calendarIds,
@@ -291,7 +319,9 @@ export async function fetchOpenCitiesEvents(
 
     return events;
   } catch (err: any) {
-    lastOpenCitiesDiagnostics = {
+    opencitiesTelemetry.lastDiagnostics = {
+      ...(opencitiesTelemetry.lastDiagnostics || {}),
+      stage: 'error',
       success: false,
       error: err?.message || String(err),
       stack: err?.stack,
