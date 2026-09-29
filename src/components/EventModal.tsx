@@ -37,7 +37,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
   )}`;
 
   const handleDownloadIcs = () => {
-    const icsContent = buildIcalFeed([event], `${event.title} - Storytime Radar`);
+    const icsContent = buildIcalFeed([event], 'StoryFeed');
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

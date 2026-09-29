@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     events = events.filter((e) => selectedTypes.includes(e.eventType));
   }
 
-  const icalString = buildIcalFeed(events, 'Storytime Radar Verified Feed');
+  const icalString = buildIcalFeed(events, 'StoryFeed');
 
   return new NextResponse(icalString, {
     status: 200,

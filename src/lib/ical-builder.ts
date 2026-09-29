@@ -3,7 +3,7 @@ import { StorytimeEvent } from '@/types';
 
 export function buildIcalFeed(
   events: StorytimeEvent[],
-  calendarName: string = 'Storytime Radar - Kids Community Calendar'
+  calendarName: string = 'StoryFeed'
 ): string {
   const calendar = ical({
     name: calendarName,
