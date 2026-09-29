@@ -1,15 +1,23 @@
 import ical, { ICalCalendarMethod } from 'ical-generator';
+import { getVtimezoneComponent } from '@touch4it/ical-timezones';
 import { StorytimeEvent } from '@/types';
 
 export function buildIcalFeed(
   events: StorytimeEvent[],
   calendarName: string = 'StoryFeed'
 ): string {
+  const primaryTimezone = events.find((e) => e.timezone)?.timezone || 'America/Los_Angeles';
+
   const calendar = ical({
     name: calendarName,
     description: 'Local community storytimes and kid events curated for your family',
     method: ICalCalendarMethod.PUBLISH,
     ttl: 60 * 60 * 6, // 6 hours cache TTL
+  });
+
+  calendar.timezone({
+    name: primaryTimezone,
+    generator: getVtimezoneComponent,
   });
 
   for (const event of events) {
