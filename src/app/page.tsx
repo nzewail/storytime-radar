@@ -374,7 +374,7 @@ export default function Home() {
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p>
-            StorytimeRadar • Built for parents & caregivers hunting for community fun
+            StorytimeRadar • Built with ❤️ from Pasadena, CA
           </p>
           <div className="flex items-center gap-4">
             <button
