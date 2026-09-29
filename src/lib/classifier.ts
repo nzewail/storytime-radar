@@ -15,9 +15,43 @@ export function classifyEvent(title: string, description: string = ''): Classifi
   // 1. Detect matching age groups
   const targetAgesSet = new Set<AgeGroup>();
 
-  // Check multi-age spans: 0-3, 0-5
+  // Check explicit numeric age ranges (e.g., "ages 2 - 5", "ages 0-3", "2 to 5 years", "18 mo - 3 yrs")
+  const ageRangeRegex =
+    /\b(?:ages?|aged)\s*:?\s*(\d+)\s*(months?|mo|yrs?|years?)?\s*(?:-|to|through)\s*(\d+)\s*(months?|mo|yrs?|years?|yo)?\b|\b(\d+)\s*(months?|mo|yrs?|years?)?\s*(?:-|to|through)\s*(\d+)\s*(yrs?|years?|yo|years old)\b/gi;
+
+  let explicitMinYears: number | null = null;
+  let explicitMaxYears: number | null = null;
+
+  for (const match of combined.matchAll(ageRangeRegex)) {
+    const rawMin = parseInt(match[1] || match[5], 10);
+    const unitMin = (match[2] || match[6] || '').toLowerCase();
+    const rawMax = parseInt(match[3] || match[7], 10);
+    const unitMax = (match[4] || match[8] || '').toLowerCase();
+
+    const minYears = unitMin.startsWith('m') ? rawMin / 12 : rawMin;
+    const maxYears = unitMax.startsWith('m') ? rawMax / 12 : rawMax;
+
+    if (!isNaN(minYears) && !isNaN(maxYears) && maxYears >= minYears) {
+      explicitMinYears = minYears;
+      explicitMaxYears = maxYears;
+
+      if (minYears <= 1.2) targetAgesSet.add('baby');
+      if ((minYears < 3 && maxYears >= 2) || (minYears >= 1 && minYears < 3 && maxYears >= 1.5)) {
+        targetAgesSet.add('toddler');
+      }
+      if (minYears < 5 && maxYears >= 3.5) {
+        targetAgesSet.add('preschool');
+      }
+      if (maxYears >= 6 || (minYears >= 5 && maxYears >= 5)) {
+        targetAgesSet.add('kids');
+      }
+    }
+  }
+
+  // Check multi-age spans: 0-3, 0-5, 2-5
   const isZeroToThree = /\b(0\s*-\s*3|0\s*to\s*3|birth\s*to\s*3)\b/i.test(combined);
   const isZeroToFive = /\b(0\s*-\s*5|0\s*to\s*5|birth\s*to\s*5|early learning|under 5)\b/i.test(combined);
+  const isTwoToFive = /\b(2\s*-\s*5|2\s*to\s*5)\b/i.test(combined);
 
   // Baby patterns
   const isBaby =
@@ -32,6 +66,7 @@ export function classifyEvent(title: string, description: string = ''): Classifi
   const isToddler =
     isZeroToThree ||
     isZeroToFive ||
+    isTwoToFive ||
     /\b(toddler|toddlers|waddler|waddlers|2s and 3s|twos|threes|tales for two|tiny tots|walking to 3)\b/i.test(
       combined
     ) ||
@@ -41,6 +76,7 @@ export function classifyEvent(title: string, description: string = ''): Classifi
   // Preschool patterns
   const isPreschool =
     isZeroToFive ||
+    isTwoToFive ||
     /\b(preschool|preschooler|preschoolers|pre-k|ready to read|little learners|4s and 5s|kindergarten prep)\b/i.test(
       combined
     ) ||
@@ -101,7 +137,19 @@ export function classifyEvent(title: string, description: string = ''): Classifi
 
   // Determine age range text
   let ageRangeText = 'All Ages';
-  if (targetAges.includes('baby') && targetAges.includes('toddler') && targetAges.includes('preschool')) {
+  if (explicitMinYears !== null && explicitMaxYears !== null) {
+    if (explicitMinYears === 0 && explicitMaxYears <= 1.5) {
+      ageRangeText = `0 – ${Math.round(explicitMaxYears * 12)} months`;
+    } else if (explicitMinYears === 0) {
+      ageRangeText = `0 – ${explicitMaxYears} years`;
+    } else if (Number.isInteger(explicitMinYears) && Number.isInteger(explicitMaxYears)) {
+      ageRangeText = `${explicitMinYears} – ${explicitMaxYears} years`;
+    } else {
+      const minStr = explicitMinYears < 2 ? `${Math.round(explicitMinYears * 12)} mo` : `${explicitMinYears} yrs`;
+      const maxStr = explicitMaxYears < 2 ? `${Math.round(explicitMaxYears * 12)} mo` : `${explicitMaxYears} yrs`;
+      ageRangeText = `${minStr} – ${maxStr}`;
+    }
+  } else if (targetAges.includes('baby') && targetAges.includes('toddler') && targetAges.includes('preschool')) {
     ageRangeText = '0 – 5 years';
   } else if (targetAges.includes('baby') && targetAges.includes('toddler')) {
     ageRangeText = '0 – 3 years';
@@ -131,13 +179,15 @@ export function classifyEvent(title: string, description: string = ''): Classifi
 
   // 2. Event Type classification
   let eventType: EventType = 'storytime';
-  if (/music|movement|sing|dance|rhythm|songs|shake|wiggle/i.test(combined)) {
+  if (/story\s*time|storytime|lap-sit|lapsit|read with|tales for|rhymetime/i.test(lowerTitle)) {
+    eventType = 'storytime';
+  } else if (/music|movement|sing|dance|rhythm|songs|shake|wiggle/i.test(combined)) {
     eventType = 'music-movement';
   } else if (/craft|stem|lego|art|paint|build|maker|science|slime|diy/i.test(combined)) {
     eventType = 'crafts-stem';
   } else if (/play|playgroup|stay and play|blocks|social|toys|open play/i.test(combined)) {
     eventType = 'playgroup';
-  } else if (/story|read|rhyme|tales|tales for|book/i.test(combined)) {
+  } else if (/story|read|rhyme|tales|book/i.test(combined)) {
     eventType = 'storytime';
   } else {
     eventType = 'other';

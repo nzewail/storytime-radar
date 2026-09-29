@@ -49,8 +49,17 @@ export async function fetchCommunicoEvents(
       const rawTitle = (item.title || '').trim();
       const rawDesc = (item.description || item.sub_title || '').trim();
       const rawLocation = (item.location || item.library || '').trim();
+      const rawAges = [
+        item.ages,
+        Array.isArray(item.agesArray) ? item.agesArray.join(' ') : '',
+        item.tags,
+        Array.isArray(item.tagsArray) ? item.tagsArray.join(' ') : '',
+        item.search_tags,
+      ]
+        .filter(Boolean)
+        .join(' ');
 
-      const textToSearch = `${rawTitle} ${rawDesc} ${rawLocation}`.toLowerCase();
+      const textToSearch = `${rawTitle} ${rawDesc} ${rawLocation} ${rawAges}`.toLowerCase();
 
       // Filter for kid/family/storytime programming
       const isKidEvent =
@@ -64,7 +73,7 @@ export async function fetchCommunicoEvents(
       const matchedBranch = matchEventToBranch(rawLocation, rawTitle, rawDesc, systemBranches);
       if (!matchedBranch) continue;
 
-      const classification = classifyEvent(rawTitle, rawDesc);
+      const classification = classifyEvent(rawTitle, `${rawDesc} ${rawAges}`);
 
       const startRaw = item.event_start || item.raw_start_time || '';
       const endRaw = item.event_end || item.raw_end_time || '';
