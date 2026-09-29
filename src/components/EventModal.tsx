@@ -3,7 +3,7 @@
 import React from 'react';
 import { StorytimeEvent } from '@/types';
 import { AGE_CATEGORIES, EVENT_TYPES } from '@/lib/constants';
-import { createGoogleCalendarEventUrl } from '@/lib/ical-builder';
+import { createGoogleCalendarEventUrl, buildIcalFeed } from '@/lib/ical-builder';
 import {
   X,
   Calendar,
@@ -37,23 +37,7 @@ export default function EventModal({ event, onClose }: EventModalProps) {
   )}`;
 
   const handleDownloadIcs = () => {
-    const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//StorytimeRadar//Event//EN',
-      'BEGIN:VEVENT',
-      `UID:${event.id}@storytimeradar.local`,
-      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
-      `DTSTART:${startDate.toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
-      `DTEND:${endDate.toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
-      `SUMMARY:${event.title} (${event.branchName})`,
-      `DESCRIPTION:${event.description.replace(/\n/g, '\\n')}`,
-      `LOCATION:${event.branchName}\\, ${event.branchAddress}`,
-      'STATUS:CONFIRMED',
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].join('\r\n');
-
+    const icsContent = buildIcalFeed([event], `${event.title} - Storytime Radar`);
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
