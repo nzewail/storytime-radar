@@ -3,7 +3,7 @@
 import React from 'react';
 import { AgeGroup, EventType, TimeOfDay, DateFilter, DatePreset } from '@/types';
 import { AGE_CATEGORIES, EVENT_TYPES, TIME_OF_DAY_BRACKETS } from '@/lib/constants';
-import { Calendar as CalendarIcon, List, Clock, Filter, Sparkles, X } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Clock, Sparkles, X, Share2, Check } from 'lucide-react';
 
 interface FilterBarProps {
   selectedAges: AgeGroup[];
@@ -21,6 +21,8 @@ interface FilterBarProps {
   onClearFilters: () => void;
   hasActiveFilters: boolean;
   totalFilteredEvents: number;
+  onShare?: () => void;
+  isCopied?: boolean;
 }
 
 export default function FilterBar({
@@ -39,6 +41,8 @@ export default function FilterBar({
   onClearFilters,
   hasActiveFilters,
   totalFilteredEvents,
+  onShare,
+  isCopied = false,
 }: FilterBarProps) {
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-16 z-20 shadow-xs transition-colors">
@@ -252,6 +256,31 @@ export default function FilterBar({
               >
                 <X className="w-3.5 h-3.5" />
                 Clear
+              </button>
+            )}
+
+            {onShare && (
+              <button
+                type="button"
+                onClick={onShare}
+                className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-md transition-colors ${
+                  isCopied
+                    ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750'
+                }`}
+                title="Copy shareable link for this search"
+              >
+                {isCopied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Share</span>
+                  </>
+                )}
               </button>
             )}
           </div>

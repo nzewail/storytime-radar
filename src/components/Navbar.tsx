@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Calendar, Sparkles, MapPin, Moon, Sun } from 'lucide-react';
+import { Calendar, Sparkles, MapPin, Moon, Sun, Share2, Check } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 
 interface NavbarProps {
@@ -9,6 +9,8 @@ interface NavbarProps {
   selectedBranchCount: number;
   onOpenSubscribeModal: () => void;
   onOpenBranchModal: () => void;
+  onShare?: () => void;
+  isCopied?: boolean;
 }
 
 export default function Navbar({
@@ -16,6 +18,8 @@ export default function Navbar({
   selectedBranchCount,
   onOpenSubscribeModal,
   onOpenBranchModal,
+  onShare,
+  isCopied = false,
 }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
 
@@ -56,6 +60,33 @@ export default function Navbar({
               {selectedBranchCount}
             </span>
           </button>
+
+          {/* Share Button */}
+          {onShare && (
+            <button
+              onClick={onShare}
+              type="button"
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                isCopied
+                  ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                  : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+              title="Copy shareable link for this search"
+              aria-label="Share search link"
+            >
+              {isCopied ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-300">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  <span className="hidden sm:inline">Share</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Dark / Light Mode Toggle Button */}
           <button
