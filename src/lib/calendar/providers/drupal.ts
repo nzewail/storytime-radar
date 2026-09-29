@@ -42,7 +42,7 @@ async function getDrupalFormConfig(eventsSearchUrl: string): Promise<DrupalFormC
         for (const m of audOptionMatches) {
           const val = m[1];
           const label = m[2].trim().toLowerCase();
-          if (/baby|toddler|kid|child|early learning/i.test(label)) {
+          if (/baby|toddler|kid|child|early learning|all ages|family/i.test(label)) {
             audienceIds.push(val);
           }
         }
@@ -166,9 +166,9 @@ export async function fetchDrupalEvents(
 
         // Filter for kid/family programming
         const isKidEvent =
-          /story\s*time|storytime|toddler|baby|babies|infant|preschool|child|children|early learning|rhyme|playgroup|play & learn|stay and play|lego|read with|craft|draw|puzzle|puppet|stem|d&d|game/i.test(
+          /story\s*time|storytime|toddler|baby|babies|infant|preschool|child|children|early learning|rhyme|playgroup|play & learn|stay and play|lego|read with|puppet|lap-sit|lapsit|family storytime/i.test(
             textToSearch
-          ) && !/adults only|50\+|tax aid|citizenship class|esl class/i.test(textToSearch);
+          ) && !/\badults?\s*only\b|\bfor\s+adults\b|\badult\s+(craft|art|book|program|class|workshop|club|coloring|d&d|chess|puzzle|game)\b|\b50\+\b|\bseniors?\b|\btax\s+aid\b|\bcitizenship\s+class\b|\besl\s+class\b|\bgrown\s*ups?\b|\b(crochet|knitting|quilting)\s+(club|circle|group)\b/i.test(textToSearch);
 
         if (!isKidEvent) continue;
 

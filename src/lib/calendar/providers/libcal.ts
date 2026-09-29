@@ -65,6 +65,22 @@ export async function fetchLibCalEvents(
         /href="([^"]*(?:libcal\.com\/event|\/events\/list)[^"]*)"/i
       );
 
+      // Extract audience from LibCal markup
+      const audienceMatch = block.match(
+        /<span[^>]*class="[^"]*strong[^"]*"[^>]*>\s*Audience:\s*<\/span>\s*<span[^>]*class="[^"]*category[^"]*"[^>]*>([\s\S]*?)<\/span>/i
+      );
+      const audience = audienceMatch
+        ? audienceMatch[1].replace(/<[^>]+>/g, '').trim()
+        : '';
+
+      // Extract categories from LibCal markup
+      const categoryMatch = block.match(
+        /<span[^>]*class="[^"]*strong[^"]*"[^>]*>\s*Categor(?:y|ies):\s*<\/span>\s*<span[^>]*class="[^"]*category[^"]*"[^>]*>([\s\S]*?)<\/span>/i
+      );
+      const category = categoryMatch
+        ? categoryMatch[1].replace(/<[^>]+>/g, '').trim()
+        : '';
+
       const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
       const desc = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : '';
       const place = placeMatch ? placeMatch[1].replace(/<[^>]+>/g, '').trim() : '';
@@ -77,18 +93,21 @@ export async function fetchLibCalEvents(
 
       if (!title) continue;
 
-      const textToSearch = `${title} ${desc}`.toLowerCase();
+      // Skip events explicitly for adults only
+      if (/^\s*(adults?|seniors?|adults?\s+50\+)\s*$/i.test(audience)) continue;
+
+      const textToSearch = `${title} ${desc} ${audience} ${category}`.toLowerCase();
       const isKidEvent =
         /story\s*time|storytime|toddler|baby|babies|infant|preschool|child|children|early learning|rhyme|playgroup|stay and play|lego|read with|family|craft|puppet/i.test(
           textToSearch
-        ) && !/adults only|50\+|tax aid|citizenship class|bingo/i.test(textToSearch);
+        ) && !/\badults?\s*only\b|\bfor\s+adults\b|\badult\s+(craft|art|book|program|class|workshop|club|coloring)\b|\b50\+\b|\bseniors?\b|\btax\s+aid\b|\bcitizenship\s+class\b|\bgrown\s*ups?\b|\b(crochet|knitting|quilting)\s+(club|circle|group)\b|\bbingo\b/i.test(textToSearch);
 
       if (!isKidEvent) continue;
 
       const matchedBranch = matchEventToBranch(place, title, desc, systemBranches);
       if (!matchedBranch) continue;
 
-      const classification = classifyEvent(title, desc);
+      const classification = classifyEvent(title, `${desc} ${audience} ${category}`);
       const { startTime, endTime } = combineDateAndTimeToIso(dateStr, timeStr, {
         state: matchedBranch.state,
       });

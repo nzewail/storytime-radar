@@ -53,10 +53,12 @@ export async function fetchIcalEvents(
     }
 
     const text = await res.text();
+    // RFC-5545 line unfolding: continuation lines start with a space or tab
+    const unfolded = text.replace(/\r?\n[ \t]/g, '');
     const events: StorytimeEvent[] = [];
 
     // Parse VEVENT blocks
-    const vevents = text.split(/BEGIN:VEVENT/i).slice(1);
+    const vevents = unfolded.split(/BEGIN:VEVENT/i).slice(1);
 
     for (const block of vevents) {
       const summaryMatch = block.match(/SUMMARY(?:;[^:]*)?:([\s\S]*?)(\r?\n[A-Z]|$)/);
@@ -66,24 +68,32 @@ export async function fetchIcalEvents(
       const dtendMatch = block.match(/DTEND(?:;[^:]*)?:([\s\S]*?)(\r?\n[A-Z]|$)/);
       const urlMatch = block.match(/URL(?:;[^:]*)?:([\s\S]*?)(\r?\n[A-Z]|$)/);
       const uidMatch = block.match(/UID(?:;[^:]*)?:([\s\S]*?)(\r?\n[A-Z]|$)/);
+      const categoriesMatch = block.match(/CATEGORIES(?:;[^:]*)?:([\s\S]*?)(\r?\n[A-Z]|$)/);
+      const statusMatch = block.match(/STATUS(?:;[^:]*)?:([\s\S]*?)(\r?\n[A-Z]|$)/);
 
       const title = summaryMatch ? summaryMatch[1].replace(/\\,/g, ',').replace(/\\n/g, ' ').trim() : '';
       const desc = descMatch ? descMatch[1].replace(/\\,/g, ',').replace(/\\n/g, '\n').trim() : '';
       const location = locMatch ? locMatch[1].replace(/\\,/g, ',').trim() : '';
       const uid = uidMatch ? uidMatch[1].trim() : Math.random().toString(36).slice(2, 9);
       const eventUrl = urlMatch ? urlMatch[1].trim() : '';
+      const categories = categoriesMatch ? categoriesMatch[1].replace(/\\,/g, ',').trim() : '';
+      const status = statusMatch ? statusMatch[1].trim() : '';
 
+      // Skip cancelled events
+      if (/cancelled|canceled/i.test(status)) continue;
+
+      const textToSearch = `${title} ${desc} ${categories}`.toLowerCase();
       const isKidEvent =
-        /story\s*time|storytime|toddler|baby|babies|infant|preschool|child|children|early learning|playgroup/i.test(
-          `${title} ${desc}`
-        );
+        /story\s*time|storytime|toddler|baby|babies|infant|preschool|child|children|kids?|early learning|rhyme|playgroup|play & learn|stay and play|lego|read with|lap-sit|lapsit|family storytime|puppet/i.test(
+          textToSearch
+        ) && !/\badults?\s*only\b|\bfor\s+adults\b|\badult\s+(craft|art|book|program|class|workshop|club)\b|\b50\+\b|\bseniors?\b|\btax\s+aid\b|\bcitizenship\s+class\b|\bgrown\s*ups?\b/i.test(textToSearch);
 
       if (!isKidEvent) continue;
 
       const branch = matchEventToBranch(location, title, desc, systemBranches);
       if (!branch) continue;
 
-      const classification = classifyEvent(title, desc);
+      const classification = classifyEvent(title, `${desc} ${categories}`);
       const startTime = dtstartMatch ? parseIcalDate(dtstartMatch[1].trim(), branch.state) : new Date().toISOString();
       const endTime = dtendMatch ? parseIcalDate(dtendMatch[1].trim(), branch.state) : new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
 

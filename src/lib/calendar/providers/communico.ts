@@ -52,20 +52,25 @@ export async function fetchCommunicoEvents(
       const rawAges = [
         item.ages,
         Array.isArray(item.agesArray) ? item.agesArray.join(' ') : '',
-        item.tags,
-        Array.isArray(item.tagsArray) ? item.tagsArray.join(' ') : '',
+        (item.tags || '').replace(/&#\d+;/g, ' '),
+        Array.isArray(item.tagsArray) ? item.tagsArray.join(' ').replace(/&#\d+;/g, ' ') : '',
         item.search_tags,
       ]
         .filter(Boolean)
         .join(' ');
 
-      const textToSearch = `${rawTitle} ${rawDesc} ${rawLocation} ${rawAges}`.toLowerCase();
+      // Skip events explicitly targeted at adults only
+      const agesArr = Array.isArray(item.agesArray) ? item.agesArray.map((a: string) => a.toLowerCase().trim()) : [];
+      const adultOnlyAudiences = ['adults', 'older adults', 'teens', 'seniors'];
+      if (agesArr.length > 0 && agesArr.every((a: string) => adultOnlyAudiences.includes(a))) continue;
+
+      const textToSearch = `${rawTitle} ${rawDesc} ${rawAges}`.toLowerCase();
 
       // Filter for kid/family/storytime programming
       const isKidEvent =
         /story\s*time|storytime|toddler|baby|babies|infant|preschool|child|children|early learning|rhyme|playgroup|play & learn|stay and play|lego|read with|lap-sit|lapsit|craft|family/i.test(
           textToSearch
-        ) && !/adults only|50\+|tax aid|citizenship class|esl class|tech help for seniors/i.test(textToSearch);
+        ) && !/\badults?\s*only\b|\bfor\s+adults\b|\badult\s+(craft|art|book|program|class|workshop|club|coloring)\b|\b50\+\b|\bseniors?\b|\btax\s+aid\b|\bcitizenship\s+class\b|\besl\s+class\b|\btech\s+help\s+for\s+seniors\b|\bgrown\s*ups?\b|\b(crochet|knitting|quilting)\s+(club|circle|group)\b/i.test(textToSearch);
 
       if (!isKidEvent) continue;
 

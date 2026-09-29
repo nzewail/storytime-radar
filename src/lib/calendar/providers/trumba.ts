@@ -73,14 +73,19 @@ export async function fetchTrumbaEvents(
       customFields.find((f: any) => /logistics/i.test(f.label || ''))?.value || '';
     const regField =
       customFields.find((f: any) => /registration/i.test(f.label || ''))?.value || '';
+    const eventTypeField =
+      customFields.find((f: any) => /event\s*type|category/i.test(f.label || ''))?.value || '';
 
-    const textToSearch = `${rawTitle} ${rawDescription} ${audienceField} ${logisticsField}`.toLowerCase();
+    const textToSearch = `${rawTitle} ${rawDescription} ${audienceField} ${logisticsField} ${eventTypeField}`.toLowerCase();
+
+    // Skip events explicitly targeted at adults only
+    if (/^\s*(adults?|adults?\s+50\+|emerging adults|seniors?)\s*$/i.test(audienceField)) continue;
 
     // Check if kid / family / storytime event
     const isKidEvent =
       /story\s*time|storytime|toddler|baby|babies|infant|preschool|child|children|early learning|rhyme|craft|stem|playgroup|play & learn|stay and play|lego|read with|lap-sit|lapsit/i.test(
         textToSearch
-      ) && !/adults only|50\+|tax aid|citizenship class|esl class|tech help for seniors/i.test(textToSearch);
+      ) && !/\badults?\s*only\b|\bfor\s+adults\b|\badult\s+(craft|art|book|program|class|workshop|club|coloring)\b|\b50\+\b|\bseniors?\b|\btax\s+aid\b|\bcitizenship\s+class\b|\besl\s+class\b|\btech\s+help\s+for\s+seniors\b|\bgrown\s*ups?\b|\b(crochet|knitting|quilting)\s+(club|circle|group)\b/i.test(textToSearch);
 
     if (!isKidEvent) continue;
 
@@ -90,7 +95,7 @@ export async function fetchTrumbaEvents(
 
     const classification = classifyEvent(
       rawTitle,
-      `${rawDescription} ${audienceField} ${logisticsField}`
+      `${rawDescription} ${audienceField} ${logisticsField} ${eventTypeField}`
     );
 
     const startTime = parseLocalDateTimeToIso(item.startDateTime, {

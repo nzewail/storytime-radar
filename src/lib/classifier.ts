@@ -48,6 +48,27 @@ export function classifyEvent(title: string, description: string = ''): Classifi
     }
   }
 
+  // Check single-boundary ages: "Ages 6+", "Ages 4 and up", "Grades K-3"
+  const singleBoundaryRegex = /\b(?:ages?)\s*:?\s*(\d+)\s*\+\b|\b(?:ages?)\s+(\d+)\s+and\s+(?:up|older|above)\b|\bgrades?\s*(k|[0-9]+)\s*(?:-|to|through)\s*([0-9]+)\b/gi;
+  for (const match of combined.matchAll(singleBoundaryRegex)) {
+    if (match[1] || match[2]) {
+      // "Ages 6+" or "Ages 4 and up"
+      const minAge = parseInt(match[1] || match[2], 10);
+      if (minAge <= 1) { targetAgesSet.add('baby'); targetAgesSet.add('toddler'); }
+      else if (minAge <= 3) targetAgesSet.add('toddler');
+      else if (minAge <= 5) targetAgesSet.add('preschool');
+      if (minAge >= 4) targetAgesSet.add('kids');
+    } else if (match[3] && match[4]) {
+      // "Grades K-3" → roughly ages 5-8
+      const gradeMin = match[3].toLowerCase() === 'k' ? 0 : parseInt(match[3], 10);
+      const gradeMax = parseInt(match[4], 10);
+      const ageMin = gradeMin + 5;
+      const ageMax = gradeMax + 6;
+      if (ageMin <= 5) targetAgesSet.add('preschool');
+      if (ageMax >= 5) targetAgesSet.add('kids');
+    }
+  }
+
   // Check multi-age spans: 0-3, 0-5, 2-5
   const isZeroToThree = /\b(0\s*-\s*3|0\s*to\s*3|birth\s*to\s*3)\b/i.test(combined);
   const isZeroToFive = /\b(0\s*-\s*5|0\s*to\s*5|birth\s*to\s*5|early learning|under 5)\b/i.test(combined);
@@ -84,11 +105,11 @@ export function classifyEvent(title: string, description: string = ''): Classifi
 
   // School Age / Kids patterns
   const isKids =
-    /\b(school age|elementary|k-5|k-6|grade school|tween|tweens|lego club|robotics|stem club|maker|homework|coding)\b/i.test(
+    /\b(school age|elementary|k-5|k-6|grade school|tween|tweens|kids?|lego club|robotics|stem club|maker|homework|coding)\b/i.test(
       combined
     ) ||
     /\b(5\+|5-12|6-11)\s*(yr|year|years)?\b/i.test(combined) ||
-    /\bchildren\b/i.test(lowerTitle);
+    /\bchildren\b/i.test(combined);
 
   // All Ages / Family patterns
   const isAllAges =
