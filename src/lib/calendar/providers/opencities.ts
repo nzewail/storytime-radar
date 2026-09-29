@@ -3,6 +3,8 @@ import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
 import { combineDateAndTimeToIso, getTimezoneForState } from '../timezone';
 
+export let lastOpenCitiesDiagnostics: any = null;
+
 // In-memory cache for live OpenCities feeds: 10 minutes TTL
 const opencitiesCache = new Map<string, { timestamp: number; events: StorytimeEvent[] }>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -272,13 +274,28 @@ export async function fetchOpenCitiesEvents(
       });
     }
 
-    opencitiesCache.set(calendarUrlOrDomain, {
-      timestamp: now,
-      events,
-    });
+    lastOpenCitiesDiagnostics = {
+      success: true,
+      entityId,
+      calendarIds,
+      candidateItemsCount: candidateItems.length,
+      eventsCount: events.length,
+    };
+
+    if (events.length > 0) {
+      opencitiesCache.set(calendarUrlOrDomain, {
+        timestamp: now,
+        events,
+      });
+    }
 
     return events;
-  } catch (err) {
+  } catch (err: any) {
+    lastOpenCitiesDiagnostics = {
+      success: false,
+      error: err?.message || String(err),
+      stack: err?.stack,
+    };
     console.error(`Error fetching OpenCities events from ${calendarUrlOrDomain}:`, err);
     return cached ? cached.events : [];
   }

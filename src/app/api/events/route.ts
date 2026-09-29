@@ -35,9 +35,19 @@ export async function GET(req: NextRequest) {
     events = events.filter((e) => selectedTypes.includes(e.eventType));
   }
 
+  const isDebug = searchParams.get('debug') === '1';
+
   return NextResponse.json({
     events,
     total: events.length,
     unsupportedBranches,
+    ...(isDebug
+      ? {
+          debug: {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            opencities: require('@/lib/calendar/providers/opencities').lastOpenCitiesDiagnostics,
+          },
+        }
+      : {}),
   });
 }
