@@ -37,31 +37,9 @@ export async function GET(req: NextRequest) {
     events = events.filter((e) => selectedTypes.includes(e.eventType));
   }
 
-  const isDebug = searchParams.get('debug') === '1';
-
-  let debugInfo: any = null;
-  if (isDebug) {
-    const sample = branchIds.length > 0 ? (await import('@/lib/imls-db')).getBranchesByIds(branchIds) : [];
-    const detected = sample[0] ? await (await import('@/lib/calendar/detector')).detectCalendarSource(sample[0].systemId, sample[0]) : null;
-    const probeRobots = await fetch('https://www.southpasadenaca.gov/robots.txt', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
-      signal: AbortSignal.timeout(3000),
-    }).then(r => r.status).catch(e => e.message);
-
-    debugInfo = {
-      branchIds,
-      branchesFound: sample.length,
-      sampleBranch: sample[0] || null,
-      detectedSource: detected,
-      probeRobotsStatus: probeRobots,
-      dispatchDebug: fetchResult.debug,
-    };
-  }
-
   return NextResponse.json({
     events,
     total: events.length,
     unsupportedBranches,
-    ...(isDebug ? { debug: debugInfo } : {}),
   });
 }

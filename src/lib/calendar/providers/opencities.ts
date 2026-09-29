@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { StorytimeEvent, LibraryBranch } from '@/types';
 import { classifyEvent } from '@/lib/classifier';
 import { matchEventToBranch, getBranchPageUrl } from '../matcher';
@@ -10,6 +12,31 @@ export const opencitiesTelemetry = {
 // In-memory cache for live OpenCities feeds: 10 minutes TTL
 const opencitiesCache = new Map<string, { timestamp: number; events: StorytimeEvent[] }>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Fallback snapshot loader for environments where municipal WAF (Akamai)
+ * blocks incoming serverless/datacenter IP ranges.
+ */
+function getFallbackOpenCitiesEvents(systemBranches: LibraryBranch[]): StorytimeEvent[] {
+  try {
+    const filePath = path.join(process.cwd(), 'data', 'opencities_fallback.json');
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const allEvents: StorytimeEvent[] = JSON.parse(raw);
+      const nowTime = Date.now();
+      const targetSystemIds = new Set(systemBranches.map((b) => b.systemId));
+      // Return upcoming events belonging to this system
+      return allEvents.filter(
+        (e) =>
+          targetSystemIds.has(e.systemId) &&
+          new Date(e.startTime).getTime() >= nowTime - 86400000
+      );
+    }
+  } catch (err) {
+    console.warn('Error reading OpenCities fallback snapshot:', err);
+  }
+  return [];
+}
 
 interface OpenCitiesItemDetail {
   Title?: string;
@@ -94,12 +121,15 @@ export async function fetchOpenCitiesEvents(
 
     opencitiesTelemetry.lastDiagnostics.hasCookies = Boolean(cookieHeader);
 
-    if (!entityId) {
-      if (!pageRes.ok) {
-        console.warn(`OpenCities calendar page returned status: ${pageRes.status}`);
-        return cached ? cached.events : [];
-      }
+    if (pageRes.status === 403 || !pageRes.ok) {
+      opencitiesTelemetry.lastDiagnostics.stage = 'fallback-snapshot-used';
+      console.warn(`OpenCities calendar page returned status: ${pageRes.status}, using verified fallback snapshot.`);
+      const fallbackEvents = getFallbackOpenCitiesEvents(systemBranches);
+      opencitiesTelemetry.lastDiagnostics.fallbackEventsCount = fallbackEvents.length;
+      return fallbackEvents;
+    }
 
+    if (!entityId) {
       const html = await pageRes.text();
       const entityMatch =
         html.match(/data-entity-id=['"]([a-f0-9-]+)['"]/i) ||
@@ -171,9 +201,11 @@ export async function fetchOpenCitiesEvents(
     opencitiesTelemetry.lastDiagnostics.itemsResStatus = itemsRes.status;
 
     if (!itemsRes.ok) {
-      opencitiesTelemetry.lastDiagnostics.stage = 'getcalendaritems-failed';
-      console.warn(`OpenCities getcalendaritems returned status: ${itemsRes.status}`);
-      return cached ? cached.events : [];
+      opencitiesTelemetry.lastDiagnostics.stage = 'fallback-snapshot-used';
+      console.warn(`OpenCities getcalendaritems returned status: ${itemsRes.status}, falling back to snapshot.`);
+      const fallbackEvents = getFallbackOpenCitiesEvents(systemBranches);
+      opencitiesTelemetry.lastDiagnostics.fallbackEventsCount = fallbackEvents.length;
+      return fallbackEvents;
     }
 
     const itemsJson = await itemsRes.json();
@@ -337,12 +369,12 @@ export async function fetchOpenCitiesEvents(
   } catch (err: any) {
     opencitiesTelemetry.lastDiagnostics = {
       ...(opencitiesTelemetry.lastDiagnostics || {}),
-      stage: 'error',
+      stage: 'error-fallback',
       success: false,
       error: err?.message || String(err),
       stack: err?.stack,
     };
     console.error(`Error fetching OpenCities events from ${calendarUrlOrDomain}:`, err);
-    return cached ? cached.events : [];
+    return getFallbackOpenCitiesEvents(systemBranches);
   }
 }
