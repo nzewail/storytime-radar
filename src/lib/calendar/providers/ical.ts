@@ -87,8 +87,11 @@ export async function fetchIcalEvents(
       const startTime = dtstartMatch ? parseIcalDate(dtstartMatch[1].trim(), branch.state) : new Date().toISOString();
       const endTime = dtendMatch ? parseIcalDate(dtendMatch[1].trim(), branch.state) : new Date(new Date(startTime).getTime() + 45 * 60000).toISOString();
 
+      const timeSlug = startTime.slice(0, 19).replace(/[^0-9]/g, '');
+      const eventIdentifier = uid.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 25);
+
       events.push({
-        id: `ical-${uid}`,
+        id: `ical-${branch.id}-${eventIdentifier}-${timeSlug}`,
         systemId: branch.systemId,
         systemName: branch.systemName,
         branchId: branch.id,

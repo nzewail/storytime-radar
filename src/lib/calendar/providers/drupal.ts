@@ -181,8 +181,11 @@ export async function fetchDrupalEvents(
           state: matchedBranch.state,
         });
 
+        const timeSlug = startTime.slice(0, 19).replace(/[^0-9]/g, '');
+        const eventIdentifier = path.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30);
+
         events.push({
-          id: `drupal-${path.replace(/[^a-zA-Z0-9]/g, '-')}`,
+          id: `drupal-${matchedBranch.id}-${eventIdentifier}-${timeSlug}`,
           systemId: matchedBranch.systemId,
           systemName: matchedBranch.systemName,
           branchId: matchedBranch.id,

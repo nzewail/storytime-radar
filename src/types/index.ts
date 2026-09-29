@@ -73,6 +73,14 @@ export interface LocationCoordinates {
   zip?: string;
 }
 
+export type DatePreset = 'all' | 'today' | 'tomorrow' | 'weekend' | 'week' | 'custom';
+
+export interface DateFilter {
+  preset: DatePreset;
+  startDate?: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+}
+
 export interface FilterState {
   selectedAges: AgeGroup[];
   selectedEventTypes: EventType[];
@@ -80,4 +88,5 @@ export interface FilterState {
   daysOfWeek: number[]; // 0 = Sunday, 1 = Monday, etc.
   timeOfDay: TimeOfDay[];
   searchQuery: string;
+  dateFilter?: DateFilter;
 }

@@ -16,8 +16,10 @@ import {
   LibraryBranch,
   LibrarySystem,
   StorytimeEvent,
+  DateFilter,
 } from '@/types';
-import { parseISO, getHours } from 'date-fns';
+import { parseISO, getHours, format, addDays, nextSaturday, nextSunday, isSaturday, isSunday } from 'date-fns';
+import { getEventDayKey } from '@/lib/calendar/timezone';
 
 export default function Home() {
   // State
@@ -35,6 +37,7 @@ export default function Home() {
   const [selectedAges, setSelectedAges] = useState<AgeGroup[]>(['baby', 'toddler']);
   const [selectedEventTypes, setSelectedEventTypes] = useState<EventType[]>([]);
   const [selectedTimeOfDay, setSelectedTimeOfDay] = useState<TimeOfDay[]>([]);
+  const [dateFilter, setDateFilter] = useState<DateFilter>({ preset: 'all' });
   const [searchFilter, setSearchFilter] = useState<string>('');
 
   const [viewMode, setViewMode] = useState<'agenda' | 'month'>('agenda');
@@ -199,6 +202,7 @@ export default function Home() {
     setSelectedAges([]);
     setSelectedEventTypes([]);
     setSelectedTimeOfDay([]);
+    setDateFilter({ preset: 'all' });
     setSearchFilter('');
   };
 
@@ -216,6 +220,32 @@ export default function Home() {
       // Event Type filter
       if (selectedEventTypes.length > 0 && !selectedEventTypes.includes(ev.eventType)) {
         return false;
+      }
+
+      // Date / Date Range filter
+      if (dateFilter.preset !== 'all') {
+        const evDayKey = getEventDayKey(ev.startTime, ev.timezone);
+        const now = new Date();
+        const todayKey = format(now, 'yyyy-MM-dd');
+
+        if (dateFilter.preset === 'today') {
+          if (evDayKey !== todayKey) return false;
+        } else if (dateFilter.preset === 'tomorrow') {
+          const tomorrowKey = format(addDays(now, 1), 'yyyy-MM-dd');
+          if (evDayKey !== tomorrowKey) return false;
+        } else if (dateFilter.preset === 'weekend') {
+          const sat = isSaturday(now) ? now : nextSaturday(now);
+          const sun = isSunday(now) ? now : (isSaturday(now) ? addDays(now, 1) : nextSunday(now));
+          const satKey = format(sat, 'yyyy-MM-dd');
+          const sunKey = format(sun, 'yyyy-MM-dd');
+          if (evDayKey !== satKey && evDayKey !== sunKey) return false;
+        } else if (dateFilter.preset === 'week') {
+          const weekEndKey = format(addDays(now, 7), 'yyyy-MM-dd');
+          if (evDayKey < todayKey || evDayKey > weekEndKey) return false;
+        } else if (dateFilter.preset === 'custom') {
+          if (dateFilter.startDate && evDayKey < dateFilter.startDate) return false;
+          if (dateFilter.endDate && evDayKey > dateFilter.endDate) return false;
+        }
       }
 
       // Time of Day filter
@@ -243,12 +273,13 @@ export default function Home() {
 
       return true;
     });
-  }, [events, selectedAges, selectedEventTypes, selectedTimeOfDay, searchFilter]);
+  }, [events, selectedAges, selectedEventTypes, selectedTimeOfDay, dateFilter, searchFilter]);
 
   const hasActiveFilters =
     selectedAges.length > 0 ||
     selectedEventTypes.length > 0 ||
     selectedTimeOfDay.length > 0 ||
+    dateFilter.preset !== 'all' ||
     searchFilter.length > 0;
 
   return (
@@ -277,6 +308,8 @@ export default function Home() {
 
       {/* Sticky Filter Bar */}
       <FilterBar
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
         selectedAges={selectedAges}
         onToggleAge={handleToggleAge}
         selectedEventTypes={selectedEventTypes}

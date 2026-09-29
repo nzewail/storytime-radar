@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AgeGroup, EventType, TimeOfDay } from '@/types';
+import { AgeGroup, EventType, TimeOfDay, DateFilter, DatePreset } from '@/types';
 import { AGE_CATEGORIES, EVENT_TYPES, TIME_OF_DAY_BRACKETS } from '@/lib/constants';
 import { Calendar as CalendarIcon, List, Clock, Filter, Sparkles, X } from 'lucide-react';
 
@@ -12,6 +12,8 @@ interface FilterBarProps {
   onToggleEventType: (type: EventType) => void;
   selectedTimeOfDay: TimeOfDay[];
   onToggleTimeOfDay: (time: TimeOfDay) => void;
+  dateFilter: DateFilter;
+  onDateFilterChange: (newFilter: DateFilter) => void;
   viewMode: 'agenda' | 'month';
   onViewModeChange: (mode: 'agenda' | 'month') => void;
   searchFilter: string;
@@ -28,6 +30,8 @@ export default function FilterBar({
   onToggleEventType,
   selectedTimeOfDay,
   onToggleTimeOfDay,
+  dateFilter,
+  onDateFilterChange,
   viewMode,
   onViewModeChange,
   searchFilter,
@@ -100,6 +104,82 @@ export default function FilterBar({
                 <span>Month View</span>
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Date Filter Row: Quick Presets + Custom Date / Range */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mr-1 shrink-0 flex items-center gap-1">
+              <CalendarIcon className="w-3.5 h-3.5 text-rose-500" />
+              Date:
+            </span>
+            {[
+              { id: 'all', label: 'All Dates' },
+              { id: 'today', label: 'Today' },
+              { id: 'tomorrow', label: 'Tomorrow' },
+              { id: 'weekend', label: 'This Weekend' },
+              { id: 'week', label: 'Next 7 Days' },
+            ].map((p) => {
+              const isSelected = dateFilter.preset === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onDateFilterChange({ preset: p.id as DatePreset })}
+                  className={`px-2.5 py-1 rounded-full font-medium transition-colors border ${
+                    isSelected
+                      ? 'bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-200 border-rose-200 dark:border-rose-800 ring-1 ring-rose-500/20 font-semibold'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom Date or Range inputs */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-850 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Custom:</span>
+            <input
+              type="date"
+              value={dateFilter.startDate || ''}
+              onChange={(e) =>
+                onDateFilterChange({
+                  preset: 'custom',
+                  startDate: e.target.value,
+                  endDate: dateFilter.endDate || e.target.value,
+                })
+              }
+              className="bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+              title="Specific Date or Range Start"
+            />
+            <span className="text-slate-400 text-[10px]">to</span>
+            <input
+              type="date"
+              value={dateFilter.endDate || ''}
+              min={dateFilter.startDate || undefined}
+              onChange={(e) =>
+                onDateFilterChange({
+                  preset: 'custom',
+                  startDate: dateFilter.startDate || e.target.value,
+                  endDate: e.target.value,
+                })
+              }
+              className="bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
+              title="Range End (Optional)"
+            />
+            {dateFilter.preset !== 'all' && (
+              <button
+                type="button"
+                onClick={() => onDateFilterChange({ preset: 'all' })}
+                className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                title="Reset date filter"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 

@@ -8,7 +8,6 @@ export function buildIcalFeed(
   const calendar = ical({
     name: calendarName,
     description: 'Local community storytimes and kid events curated for your family',
-    timezone: 'America/Los_Angeles',
     method: ICalCalendarMethod.PUBLISH,
     ttl: 60 * 60 * 6, // 6 hours cache TTL
   });
@@ -29,10 +28,16 @@ export function buildIcalFeed(
     }
     description += `\nCurated via StorytimeRadar`;
 
+    // Clean stable UID ending in standard domain
+    const cleanId = event.id.replace(/[^a-zA-Z0-9_-]/g, '-');
+    const stableStartTime = new Date(event.startTime);
+
     calendar.createEvent({
-      id: `${event.id}@storytimeradar.local`,
-      start: new Date(event.startTime),
+      id: `${cleanId}@storytimeradar.com`,
+      start: stableStartTime,
       end: new Date(event.endTime),
+      stamp: stableStartTime, // Stable stamp prevents Google Calendar from re-syncing as fresh events
+      sequence: 1,
       summary,
       description,
       location: `${event.roomOrLocation ? event.roomOrLocation + ', ' : ''}${event.branchName}, ${event.branchAddress}`,

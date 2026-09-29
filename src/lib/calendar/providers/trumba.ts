@@ -117,8 +117,11 @@ export async function fetchTrumbaEvents(
       /registration is required|rsvp required/i.test(regField) ||
       classification.isRegistrationRequired;
 
+    const timeSlug = startTime.slice(0, 19).replace(/[^0-9]/g, '');
+    const eventIdentifier = item.eventID || rawTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 25);
+
     events.push({
-      id: `${webName}-${item.eventID || Math.random().toString(36).slice(2, 9)}`,
+      id: `trumba-${matchedBranch.id}-${eventIdentifier}-${timeSlug}`,
       systemId: matchedBranch.systemId,
       systemName: matchedBranch.systemName,
       branchId: matchedBranch.id,

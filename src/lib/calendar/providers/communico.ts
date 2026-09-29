@@ -80,8 +80,11 @@ export async function fetchCommunicoEvents(
 
       const eventUrl = item.url || matchedBranch.website || `${baseUrl}/event/${item.id}`;
 
+      const timeSlug = startTime.slice(0, 19).replace(/[^0-9]/g, '');
+      const eventIdentifier = item.id || rawTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 25);
+
       events.push({
-        id: `communico-${item.id || Math.random().toString(36).slice(2, 9)}`,
+        id: `communico-${matchedBranch.id}-${eventIdentifier}-${timeSlug}`,
         systemId: matchedBranch.systemId,
         systemName: matchedBranch.systemName,
         branchId: matchedBranch.id,

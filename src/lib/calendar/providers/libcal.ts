@@ -93,8 +93,11 @@ export async function fetchLibCalEvents(
         state: matchedBranch.state,
       });
 
+      const timeSlug = startTime.slice(0, 19).replace(/[^0-9]/g, '');
+      const eventIdentifier = title.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 25);
+
       events.push({
-        id: `libcal-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${dateStr.replace(/[^a-z0-9]/g, '-')}`,
+        id: `libcal-${matchedBranch.id}-${eventIdentifier}-${timeSlug}`,
         systemId: matchedBranch.systemId,
         systemName: matchedBranch.systemName,
         branchId: matchedBranch.id,
