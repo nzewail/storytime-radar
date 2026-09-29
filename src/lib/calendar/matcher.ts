@@ -12,7 +12,6 @@ export function matchEventToBranch(
   branches: LibraryBranch[]
 ): LibraryBranch | null {
   if (branches.length === 0) return null;
-  if (branches.length === 1) return branches[0];
 
   const searchCorpus = `${rawLocation} ${eventTitle} ${eventDescription}`.toLowerCase();
 

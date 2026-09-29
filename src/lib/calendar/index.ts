@@ -34,6 +34,15 @@ export async function fetchEventsForBranches(
     branchesBySystem.set(b.systemId, list);
   }
 
+  // Pre-load all system branches so calendar providers match events against their true physical branch
+  const allLibraries = loadAllLibraries();
+  const allBranchesBySystem = new Map<string, LibraryBranch[]>();
+  for (const b of allLibraries) {
+    const list = allBranchesBySystem.get(b.systemId) || [];
+    list.push(b);
+    allBranchesBySystem.set(b.systemId, list);
+  }
+
   const allEvents: StorytimeEvent[] = [];
   const unsupportedBranches: LibraryBranch[] = [];
 
@@ -46,24 +55,26 @@ export async function fetchEventsForBranches(
       continue;
     }
 
+    const allSystemBranches = allBranchesBySystem.get(systemId) || systemBranches;
+
     try {
       let systemEvents: StorytimeEvent[] = [];
 
       switch (source.platform) {
         case 'trumba':
-          systemEvents = await fetchTrumbaEvents(source.calendarId, systemBranches);
+          systemEvents = await fetchTrumbaEvents(source.calendarId, allSystemBranches);
           break;
         case 'communico':
-          systemEvents = await fetchCommunicoEvents(source.calendarId, systemBranches);
+          systemEvents = await fetchCommunicoEvents(source.calendarId, allSystemBranches);
           break;
         case 'drupal':
-          systemEvents = await fetchDrupalEvents(source.calendarId, systemBranches);
+          systemEvents = await fetchDrupalEvents(source.calendarId, allSystemBranches);
           break;
         case 'libcal':
-          systemEvents = await fetchLibCalEvents(source.calendarId, systemBranches);
+          systemEvents = await fetchLibCalEvents(source.calendarId, allSystemBranches);
           break;
         case 'ical':
-          systemEvents = await fetchIcalEvents(source.calendarId, systemBranches);
+          systemEvents = await fetchIcalEvents(source.calendarId, allSystemBranches);
           break;
         default:
           unsupportedBranches.push(...systemBranches);
